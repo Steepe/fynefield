@@ -43,8 +43,9 @@ class Admin extends BaseController
                 preg_match('/src\\s*=\\s*(["\\\'])(.*?)\\1/i', $attributes, $src);
                 preg_match('/alt\\s*=\\s*(["\\\'])(.*?)\\1/i', $attributes, $alt);
                 $url = trim($src[2] ?? '');
-                // Editorial images may come from the managed media areas or HTTPS.
-                if (! preg_match('#^(?:/uploads/|/assets/media/|https://)#i', $url)) return '';
+                // Images are intentionally limited to Fynefield's recovered library
+                // or assets uploaded by the Fynefield team through this CMS.
+                if (! preg_match('#^/(?:uploads/|assets/media/)#i', $url)) return '';
                 return '<img src="' . esc($url, 'attr') . '" alt="' . esc(trim($alt[2] ?? ''), 'attr') . '">';
             }
 
@@ -75,7 +76,7 @@ class Admin extends BaseController
     private function safeMediaPath(string $path): string
     {
         $path = trim($path);
-        return preg_match('#^(?:/uploads/|/assets/media/|https://)#i', $path) ? $path : '';
+        return preg_match('#^/(?:uploads/|assets/media/)#i', $path) ? $path : '';
     }
     private function safeCsvValue(mixed $value): string
     {

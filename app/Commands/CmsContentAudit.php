@@ -13,7 +13,11 @@ class CmsContentAudit extends BaseCommand
 
     private function checkMediaPath(string $path, string $context, array &$issues): void
     {
-        if ($path === '' || ! preg_match('#^/(?:assets/media|uploads)/#', $path)) return;
+        if ($path === '') return;
+        if (! preg_match('#^/(?:assets/media|uploads)/#', $path)) {
+            $issues[] = "Non-Fynefield image source for {$context}: {$path}";
+            return;
+        }
         $file = FCPATH . ltrim($path, '/');
         if (! is_file($file)) $issues[] = "Missing local media for {$context}: {$path}";
     }
