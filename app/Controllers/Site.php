@@ -74,7 +74,8 @@ class Site extends BaseController
             $post = $this->visibleContent('posts')->where('legacy_source_id', (int) $legacyPostId)->get()->getRowArray();
             if ($post) return redirect()->to(site_url('news/' . $post['slug']), 301);
         }
-        return view('site/home', $this->base(['services' => $db->table('services')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray(), 'posts' => $this->visibleContent('posts')->orderBy('published_at', 'DESC')->limit(2)->get()->getResultArray()]));
+        // The home page carries its own inquiry form, so it shows that form's confirmation and errors inline.
+        return view('site/home', $this->base(['isHome' => true, 'inlineFlash' => true, 'hideFooterCta' => true, 'services' => $db->table('services')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray(), 'posts' => $this->visibleContent('posts')->orderBy('published_at', 'DESC')->limit(2)->get()->getResultArray()]));
     }
     private function redirectByPath(string $path)
     {
@@ -108,7 +109,8 @@ class Site extends BaseController
         $title = $post['seo_title'] ?: ($post['title'] . ' | Fynefield Petroleum');
         $metaDescription = $post['meta_description'] ?: $post['excerpt'];
         $isPreview = true;
-        return view('site/article', $this->base(compact('post', 'title', 'metaDescription', 'isPreview')));
+        $nextPost = null;
+        return view('site/article', $this->base(compact('post', 'title', 'metaDescription', 'isPreview', 'nextPost')));
     }
     public function sitemap()
     {
@@ -157,11 +159,13 @@ class Site extends BaseController
         if (! $post) throw PageNotFoundException::forPageNotFound();
         $title = $post['seo_title'] ?: ($post['title'] . ' | Fynefield Petroleum');
         $metaDescription = $post['meta_description'] ?: $post['excerpt'];
-        return view('site/article', $this->base(compact('post', 'title', 'metaDescription')));
+        $nextPost = $this->visibleContent('posts')->where('id !=', $post['id'])->orderBy('published_at', 'DESC')->get()->getRowArray();
+        return view('site/article', $this->base(compact('post', 'title', 'metaDescription', 'nextPost')));
     }
     public function contact(): string
     {
-        return view('site/contact', $this->base(['locations' => db_connect()->table('locations')->where('status', 'published')->get()->getResultArray()]));
+        // The contact view renders its own success/error states and the design omits the footer CTA band here.
+        return view('site/contact', $this->base(['locations' => db_connect()->table('locations')->where('status', 'published')->get()->getResultArray(), 'inlineFlash' => true, 'hideFooterCta' => true]));
     }
     private function notifyInquiry(int $inquiryId, array $inquiry, string $now): void
     {
@@ -194,11 +198,13 @@ class Site extends BaseController
     {
         // This field is visually hidden from people but attractive to basic form bots.
         // Return the normal confirmation so a bot cannot use the response as an oracle.
+        // The home page's quick form returns to its own confirmation; every other form returns to the contact page.
+        $returnTo = $this->request->getPost('return_to') === 'home' ? site_url('/') . '#inquiry' : '/contact-us';
         if (trim((string) $this->request->getPost('company_website')) !== '') {
-            return redirect()->to('/contact-us')->with('success', 'Thank you. Your inquiry has been received.');
+            return redirect()->to($returnTo)->with('success', 'Thank you. Your inquiry has been received.')->with('inquiry_reference', sprintf('FP-%s-%04d', date('y'), random_int(1000, 9999)));
         }
 
-        $rules = ['name' => 'required|max_length[160]', 'email' => 'required|valid_email|max_length[190]', 'phone' => 'permit_empty|max_length[80]', 'subject' => 'required|max_length[190]', 'message' => 'required|max_length[5000]', 'privacy_consent' => 'required|in_list[1]'];
+        $rules = ['name' => 'required|max_length[160]', 'company' => 'permit_empty|max_length[160]', 'email' => 'required|valid_email|max_length[190]', 'phone' => 'permit_empty|max_length[80]', 'subject' => 'required|max_length[190]', 'message' => 'required|max_length[5000]', 'privacy_consent' => 'required|in_list[1]'];
         if (! $this->validate($rules)) return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
 
         $throttler = service('throttler');
@@ -210,9 +216,13 @@ class Site extends BaseController
         $now = date('Y-m-d H:i:s');
         $fields = ['name', 'email', 'phone', 'subject', 'message'];
         $inquiry = $this->request->getPost($fields);
+        // Inquiries have no company column, so the optional company is recorded at the top of the message.
+        $company = trim((string) $this->request->getPost('company'));
+        if ($company !== '') $inquiry['message'] = "Company: {$company}\n\n" . $inquiry['message'];
         $db = db_connect();
         $db->table('inquiries')->insert($inquiry + ['status' => 'new', 'consented_at' => $now, 'notification_status' => 'pending', 'created_at' => $now, 'updated_at' => $now]);
-        $this->notifyInquiry((int) $db->insertID(), $inquiry, $now);
-        return redirect()->to('/contact-us')->with('success', 'Thank you. Your inquiry has been received.');
+        $inquiryId = (int) $db->insertID();
+        $this->notifyInquiry($inquiryId, $inquiry, $now);
+        return redirect()->to($returnTo)->with('success', 'Thank you. Your inquiry has been received.')->with('inquiry_reference', sprintf('FP-%s-%04d', date('y'), $inquiryId));
     }
 }
