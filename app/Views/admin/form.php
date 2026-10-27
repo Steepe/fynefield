@@ -6,7 +6,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<section class="list-head"><div><p>Content manager</p><h1><?= empty($row) ? 'New ' : 'Edit ' ?><?= esc(rtrim($meta['label'], 's')) ?></h1></div><div class="list-actions"><a href="<?= site_url('admin/' . $entity) ?>">← Back to <?= strtolower($meta['label']) ?></a><?php if (! empty($row)): ?><a class="history-link" href="<?= site_url('admin/' . $entity . '/' . $row['id'] . '/revisions') ?>">Version history</a><?php endif ?><?php if ($entity === 'pages' && ! empty($row)): ?><a class="history-link" href="<?= site_url('admin/pages/' . $row['id'] . '/sections') ?>">Manage sections</a><?php if (! empty($row['preview_token']) && ! empty($row['preview_token_expires']) && strtotime($row['preview_token_expires']) >= time()): ?><a class="history-link" target="_blank" rel="noopener" href="<?= site_url('preview/' . $row['slug']) . '?token=' . rawurlencode($row['preview_token']) ?>">Private preview ↗</a><?php endif ?><form class="inline-form" method="post" action="<?= site_url('admin/pages/' . $row['id'] . '/preview-link') ?>"><?= csrf_field() ?><button type="submit">Refresh preview</button></form><?php endif ?></div></section>
+<section class="list-head"><div><p>Content manager</p><h1><?= empty($row) ? 'New ' : 'Edit ' ?><?= esc(rtrim($meta['label'], 's')) ?></h1></div><div class="list-actions"><a href="<?= site_url('admin/' . $entity) ?>">← Back to <?= strtolower($meta['label']) ?></a><?php if (! empty($row)): ?><a class="history-link" href="<?= site_url('admin/' . $entity . '/' . $row['id'] . '/revisions') ?>">Version history</a><?php endif ?><?php if ($entity === 'pages' && ! empty($row)): ?><a class="history-link" href="<?= site_url('admin/pages/' . $row['id'] . '/sections') ?>">Manage sections</a><?php endif ?><?php if (in_array($entity, ['pages', 'posts'], true) && ! empty($row)): ?><?php $previewPath = $entity === 'pages' ? 'preview/' . $row['slug'] : 'preview/news/' . $row['slug']; ?><?php if (! empty($row['preview_token']) && ! empty($row['preview_token_expires']) && strtotime($row['preview_token_expires']) >= time()): ?><a class="history-link" target="_blank" rel="noopener" href="<?= site_url($previewPath) . '?token=' . rawurlencode($row['preview_token']) ?>">Private preview ↗</a><?php endif ?><form class="inline-form" method="post" action="<?= site_url('admin/' . $entity . '/' . $row['id'] . '/preview-link') ?>"><?= csrf_field() ?><button type="submit">Refresh preview</button></form><?php endif ?></div></section>
 <form class="editor-form" method="post" action="<?= empty($row) ? site_url('admin/' . $entity) : site_url('admin/' . $entity . '/' . $row['id']) ?>">
 <?= csrf_field() ?>
 <?php foreach ($meta['fields'] as $name => $type): ?>
@@ -16,6 +16,8 @@
     <input id="<?= esc($name) ?>" type="hidden" name="<?= esc($name) ?>" value="<?= esc(old($name, $row[$name] ?? '')) ?>">
     <trix-editor input="<?= esc($name) ?>" class="rich-text-editor"></trix-editor>
     <button class="media-picker-button" type="button" data-media-picker data-editor-input="<?= esc($name) ?>">Insert image from library</button>
+<?php elseif ($type === 'readonly'): ?>
+    <output><?= esc($row[$name] ?? '—') ?></output>
 <?php elseif ($type === 'textarea'): ?>
     <textarea name="<?= esc($name) ?>" rows="4" <?= $name === 'meta_description' ? 'maxlength="255"' : '' ?>><?= esc(old($name, $row[$name] ?? '')) ?></textarea>
 <?php elseif ($type === 'status' || $type === 'inquiry_status'): ?>
@@ -43,7 +45,7 @@
     <p class="field-help">Choose an approved image. Descriptive alternative text is added from the filename and can be refined in the editor.</p>
     <div class="media-picker-grid">
         <?php foreach ($editorMedia as $item): ?>
-        <button type="button" class="media-picker-item" data-insert-media data-url="<?= esc($item['path'], 'attr') ?>" data-alt="<?= esc(pathinfo($item['filename'], PATHINFO_FILENAME), 'attr') ?>">
+        <button type="button" class="media-picker-item" data-insert-media data-url="<?= esc($item['path'], 'attr') ?>" data-alt="<?= esc($item['alt_text'] ?: pathinfo($item['filename'], PATHINFO_FILENAME), 'attr') ?>">
             <img src="<?= esc($item['path'], 'attr') ?>" alt=""><span><?= esc($item['filename']) ?></span>
         </button>
         <?php endforeach ?>

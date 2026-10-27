@@ -5,7 +5,7 @@
 <main class="container prose content-page"><?= $page['content'] ?>
 <?php if ($team): ?><div class="team-grid"><?php foreach ($team as $member): ?><article><img src="<?= esc($member['image']) ?>" alt="<?= esc($member['name']) ?>"><h3><?= esc($member['name']) ?></h3><p class="position"><?= esc($member['position']) ?></p><p><?= esc($member['bio']) ?></p></article><?php endforeach ?></div><?php endif ?></main>
 <?php if ($locations): ?><section class="container location-list"><?php foreach ($locations as $location): ?><article><h3><?= esc($location['name']) ?></h3><p><?= esc($location['address']) ?></p><a href="tel:<?= esc(preg_replace('/\s+/', '', $location['phone'] ?? '')) ?>"><?= esc($location['phone']) ?></a></article><?php endforeach ?></section><?php endif ?>
-<?php if ($galleryImages): ?><section class="container content-gallery"><?php foreach ($galleryImages as $image): ?><img src="<?= esc($image) ?>" alt="Fynefield operations"><?php endforeach ?></section><?php endif ?>
+<?php if ($galleryImages): ?><section class="container content-gallery" aria-label="Fynefield operations gallery"><?php foreach ($galleryImages as $image): ?><button class="gallery-trigger" type="button" data-lightbox-src="<?= esc($image, 'attr') ?>" data-lightbox-alt="Fynefield operations"><img src="<?= esc($image) ?>" alt="Fynefield operations"><span class="gallery-zoom" aria-hidden="true">View image</span></button><?php endforeach ?></section><?php endif ?>
 <?php endif ?>
 <?= view('site/partials/page_sections', ['sections' => $sections]) ?>
 <?= $this->endSection() ?>

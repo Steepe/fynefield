@@ -6,6 +6,24 @@ use CodeIgniter\Exceptions\PageNotFoundException;
 
 class Site extends BaseController
 {
+    public function health()
+    {
+        try {
+            db_connect()->query('SELECT 1');
+            return $this->response->setJSON(['status' => 'ok', 'time' => gmdate('c')]);
+        } catch (\Throwable $exception) {
+            log_message('critical', 'Health check database failure: {message}', ['message' => $exception->getMessage()]);
+            return $this->response->setStatusCode(503)->setJSON(['status' => 'unavailable']);
+        }
+    }
+
+    public function notFound(string $message = ''): string
+    {
+        $title = 'Page not found | Fynefield Petroleum';
+        $metaDescription = 'The page you requested is unavailable. Explore Fynefield Petroleum services, news, or contact our team.';
+        $isPreview = true;
+        return view('site/not_found', $this->base(compact('title', 'metaDescription', 'isPreview')));
+    }
     private function settings(): array
     {
         $rows = db_connect()->table('settings')->get()->getResultArray();
@@ -26,7 +44,9 @@ class Site extends BaseController
     {
         $db = db_connect();
         $sections = $db->table('page_sections')->where('page_id', $page['id'])->orderBy('sort_order')->orderBy('id')->get()->getResultArray();
+        $mediaAlt = array_column($db->table('media')->select('path, alt_text')->get()->getResultArray(), 'alt_text', 'path');
         foreach ($sections as &$section) {
+            $section['image_alt'] = trim((string) ($mediaAlt[$section['image'] ?? ''] ?? '')) ?: (string) ($section['heading'] ?? '');
             $section['item_rows'] = array_values(array_filter(array_map(static function (string $line): array {
                 $parts = array_map('trim', explode('|', $line, 2));
                 return ['label' => $parts[0] ?? '', 'value' => $parts[1] ?? ''];
@@ -80,6 +100,16 @@ class Site extends BaseController
         if (! $page || strlen($token) !== 64 || empty($page['preview_token']) || empty($page['preview_token_expires']) || strtotime($page['preview_token_expires']) < time() || ! hash_equals($page['preview_token'], $token)) throw PageNotFoundException::forPageNotFound();
         return $this->pageView($page, true);
     }
+    public function previewPost(string $slug): string
+    {
+        $token = (string) $this->request->getGet('token');
+        $post = db_connect()->table('posts')->where('slug', $slug)->get()->getRowArray();
+        if (! $post || strlen($token) !== 64 || empty($post['preview_token']) || empty($post['preview_token_expires']) || strtotime($post['preview_token_expires']) < time() || ! hash_equals($post['preview_token'], $token)) throw PageNotFoundException::forPageNotFound();
+        $title = $post['seo_title'] ?: ($post['title'] . ' | Fynefield Petroleum');
+        $metaDescription = $post['meta_description'] ?: $post['excerpt'];
+        $isPreview = true;
+        return view('site/article', $this->base(compact('post', 'title', 'metaDescription', 'isPreview')));
+    }
     public function sitemap()
     {
         $pages = $this->visibleContent('pages')->where('noindex', 0)->select('slug, updated_at')->get()->getResultArray();
@@ -92,11 +122,20 @@ class Site extends BaseController
         ];
         foreach ($pages as $page) $urls[] = ['loc' => site_url($page['slug']), 'lastmod' => $page['updated_at']];
         foreach ($posts as $post) $urls[] = ['loc' => site_url('news/' . $post['slug']), 'lastmod' => $post['updated_at']];
-        return $this->response->setContentType('application/xml')->setBody(view('site/sitemap', compact('urls')));
+
+        // Do not render XML through the view service: development debug markers
+        // are HTML comments and would make the XML declaration invalid.
+        $xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+        foreach ($urls as $url) {
+            $xml .= '<url><loc>' . htmlspecialchars($url['loc'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc>';
+            if ($url['lastmod']) $xml .= '<lastmod>' . htmlspecialchars(date('c', strtotime($url['lastmod'])), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
+            $xml .= '</url>';
+        }
+        return $this->response->setContentType('application/xml')->setBody($xml . '</urlset>');
     }
     public function robots()
     {
-        return $this->response->setContentType('text/plain')->setBody("User-agent: *\nAllow: /\n\nSitemap: " . site_url('sitemap.xml') . "\n");
+        return $this->response->setContentType('text/plain')->setBody("User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /preview/\n\nSitemap: " . site_url('sitemap.xml') . "\n");
     }
     public function services(): string
     {
@@ -124,6 +163,33 @@ class Site extends BaseController
     {
         return view('site/contact', $this->base(['locations' => db_connect()->table('locations')->where('status', 'published')->get()->getResultArray()]));
     }
+    private function notifyInquiry(int $inquiryId, array $inquiry, string $now): void
+    {
+        $settings = $this->settings();
+        $recipient = trim((string) ($settings['inquiry_recipient_email'] ?? ''));
+        $sender = trim((string) ($settings['inquiry_sender_email'] ?? ''));
+        $db = db_connect();
+        if (! filter_var($recipient, FILTER_VALIDATE_EMAIL) || ! filter_var($sender, FILTER_VALIDATE_EMAIL)) {
+            $db->table('inquiries')->where('id', $inquiryId)->update(['notification_status' => 'not_configured', 'updated_at' => $now]);
+            return;
+        }
+
+        try {
+            $email = service('email');
+            $email->clear();
+            $email->setFrom($sender, $settings['site_name'] ?? 'Fynefield Petroleum');
+            $email->setTo($recipient);
+            $email->setReplyTo($inquiry['email'], $inquiry['name']);
+            $email->setSubject('New website inquiry: ' . $inquiry['subject']);
+            $email->setMessage("Name: {$inquiry['name']}\nEmail: {$inquiry['email']}\nPhone: {$inquiry['phone']}\n\nMessage:\n{$inquiry['message']}");
+            $sent = $email->send(false);
+            $db->table('inquiries')->where('id', $inquiryId)->update(['notification_status' => $sent ? 'sent' : 'failed', 'notified_at' => $sent ? $now : null, 'updated_at' => $now]);
+            if (! $sent) log_message('error', 'Inquiry notification failed for inquiry {id}.', ['id' => $inquiryId]);
+        } catch (\Throwable $exception) {
+            $db->table('inquiries')->where('id', $inquiryId)->update(['notification_status' => 'failed', 'updated_at' => $now]);
+            log_message('error', 'Inquiry notification exception for inquiry {id}: {message}', ['id' => $inquiryId, 'message' => $exception->getMessage()]);
+        }
+    }
     public function storeInquiry()
     {
         // This field is visually hidden from people but attractive to basic form bots.
@@ -143,7 +209,10 @@ class Site extends BaseController
 
         $now = date('Y-m-d H:i:s');
         $fields = ['name', 'email', 'phone', 'subject', 'message'];
-        db_connect()->table('inquiries')->insert($this->request->getPost($fields) + ['status' => 'new', 'consented_at' => $now, 'created_at' => $now, 'updated_at' => $now]);
+        $inquiry = $this->request->getPost($fields);
+        $db = db_connect();
+        $db->table('inquiries')->insert($inquiry + ['status' => 'new', 'consented_at' => $now, 'notification_status' => 'pending', 'created_at' => $now, 'updated_at' => $now]);
+        $this->notifyInquiry((int) $db->insertID(), $inquiry, $now);
         return redirect()->to('/contact-us')->with('success', 'Thank you. Your inquiry has been received.');
     }
 }

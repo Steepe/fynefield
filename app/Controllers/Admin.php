@@ -12,11 +12,11 @@ class Admin extends BaseController
         'services' => ['label' => 'Services', 'fields' => ['title' => 'text', 'slug' => 'text', 'summary' => 'textarea', 'content' => 'richtext', 'image' => 'text', 'sort_order' => 'number', 'status' => 'status']],
         'team_members' => ['label' => 'Team', 'fields' => ['name' => 'text', 'position' => 'text', 'bio' => 'textarea', 'image' => 'text', 'sort_order' => 'number', 'status' => 'status']],
         'locations' => ['label' => 'Locations', 'fields' => ['name' => 'text', 'address' => 'textarea', 'city' => 'text', 'state' => 'text', 'phone' => 'text', 'latitude' => 'text', 'longitude' => 'text', 'status' => 'status']],
-        'inquiries' => ['label' => 'Inquiries', 'fields' => ['name' => 'text', 'email' => 'text', 'phone' => 'text', 'subject' => 'text', 'message' => 'textarea', 'status' => 'inquiry_status', 'internal_notes' => 'textarea']],
+        'inquiries' => ['label' => 'Inquiries', 'fields' => ['name' => 'text', 'email' => 'text', 'phone' => 'text', 'subject' => 'text', 'message' => 'textarea', 'status' => 'inquiry_status', 'notification_status' => 'readonly', 'notified_at' => 'readonly', 'internal_notes' => 'textarea']],
         'redirects' => ['label' => 'Redirects', 'admin_only' => true, 'fields' => ['source_path' => 'text', 'target_url' => 'url', 'http_code' => 'redirect_code', 'is_active' => 'checkbox']],
     ];
     private function entity(string $entity): array { if (! isset($this->entities[$entity]) || (($this->entities[$entity]['admin_only'] ?? false) && session('admin_role') !== 'admin')) throw PageNotFoundException::forPageNotFound(); return $this->entities[$entity]; }
-    private function data(array $data = []): array { return $data + ['entities' => $this->entities, 'adminName' => session('admin_name'), 'adminRole' => session('admin_role')]; }
+    private function data(array $data = []): array { return $data + ['entities' => $this->entities, 'adminName' => session('admin_name'), 'adminRole' => session('admin_role'), 'mustChangePassword' => (bool) session('must_change_password')]; }
     private function requireAdministrator()
     {
         if (session('admin_role') !== 'admin') return redirect()->to('/admin')->with('error', 'Administrator access is required.');
@@ -58,7 +58,7 @@ class Admin extends BaseController
         $legacyFiles = glob(FCPATH . 'assets/media/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', GLOB_BRACE) ?: [];
         foreach ($legacyFiles as $file) {
             $path = '/assets/media/' . basename($file);
-            if (! in_array($path, $knownPaths, true)) $media[] = ['filename' => basename($file), 'path' => $path, 'mime_type' => mime_content_type($file) ?: 'image/*'];
+            if (! in_array($path, $knownPaths, true)) $media[] = ['filename' => basename($file), 'path' => $path, 'mime_type' => mime_content_type($file) ?: 'image/*', 'alt_text' => ''];
         }
         return $media;
     }
@@ -76,6 +76,13 @@ class Admin extends BaseController
     {
         $path = trim($path);
         return preg_match('#^(?:/uploads/|/assets/media/|https://)#i', $path) ? $path : '';
+    }
+    private function safeCsvValue(mixed $value): string
+    {
+        $value = (string) $value;
+        // Spreadsheet applications may treat cells starting with a formula
+        // character as executable content. Preserve the visible value as text.
+        return preg_match('/^\s*[=+\-@\t\r]/', $value) ? "'" . $value : $value;
     }
     public function dashboard(): string
     {
@@ -139,7 +146,7 @@ class Admin extends BaseController
                 $data['approved_at'] = date('Y-m-d H:i:s');
                 $data['approved_by'] = session('admin_id');
             }
-            if ($entity === 'pages' && ! $id) {
+            if (in_array($entity, ['pages', 'posts'], true) && ! $id) {
                 $data['preview_token'] = bin2hex(random_bytes(32));
                 $data['preview_token_expires'] = date('Y-m-d H:i:s', strtotime('+7 days'));
             }
@@ -194,19 +201,19 @@ class Admin extends BaseController
         }
         $editorMedia = $this->editorMedia();
         $defaultSectionType = (string) $this->request->getGet('type');
-        if (! in_array($defaultSectionType, ['hero', 'rich_text', 'image_text', 'call_to_action', 'stat_grid', 'gallery', 'faq'], true)) $defaultSectionType = 'rich_text';
+        if (! in_array($defaultSectionType, ['hero', 'rich_text', 'image_text', 'call_to_action', 'stat_grid', 'gallery', 'faq', 'trust_strip', 'testimonial_carousel'], true)) $defaultSectionType = 'rich_text';
         return view('admin/section_form', $this->data(compact('page', 'section', 'editorMedia', 'defaultSectionType')));
     }
     public function saveSection(int $pageId, ?int $sectionId = null)
     {
         $this->pageOrFail($pageId); $db = db_connect();
         $data = $this->request->getPost(['section_type', 'eyebrow', 'heading', 'content', 'image', 'button_label', 'button_url', 'items', 'sort_order']) ?? [];
-        if (! in_array($data['section_type'] ?? '', ['hero', 'rich_text', 'image_text', 'call_to_action', 'stat_grid', 'gallery', 'faq'], true)) return redirect()->back()->withInput()->with('error', 'Choose a valid section type.');
+        if (! in_array($data['section_type'] ?? '', ['hero', 'rich_text', 'image_text', 'call_to_action', 'stat_grid', 'gallery', 'faq', 'trust_strip', 'testimonial_carousel'], true)) return redirect()->back()->withInput()->with('error', 'Choose a valid section type.');
         foreach ($data as $key => $value) if (is_string($value)) $data[$key] = trim($value);
         $data['content'] = $this->cleanHtml((string) ($data['content'] ?? ''));
         $data['image'] = $this->safeMediaPath((string) ($data['image'] ?? ''));
         $data['button_url'] = trim((string) ($data['button_url'] ?? ''));
-        if ($data['button_url'] !== '' && ! preg_match('#^(https?://|/)#i', $data['button_url'])) return redirect()->back()->withInput()->with('error', 'Buttons must link to an absolute HTTPS/HTTP URL or a site-relative path.');
+        if ($data['button_url'] !== '' && ! preg_match('#^(?:https?://|/(?!/))#i', $data['button_url'])) return redirect()->back()->withInput()->with('error', 'Buttons must link to an absolute HTTPS/HTTP URL or a site-relative path.');
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0); $data['page_id'] = $pageId; $data['updated_at'] = date('Y-m-d H:i:s');
         if ($sectionId) {
             $exists = $db->table('page_sections')->where(['id' => $sectionId, 'page_id' => $pageId])->countAllResults();
@@ -256,6 +263,15 @@ class Admin extends BaseController
         $this->recordActivity('refreshed preview', 'pages', $pageId);
         return redirect()->to('/admin/pages/' . $pageId . '/edit')->with('success', 'A fresh private preview link is ready.');
     }
+    public function refreshPostPreview(int $postId)
+    {
+        $post = db_connect()->table('posts')->where('id', $postId)->get()->getRowArray();
+        if (! $post || (session('admin_role') !== 'admin' && ! in_array($post['status'], ['draft', 'in_review'], true))) throw PageNotFoundException::forPageNotFound();
+        $token = bin2hex(random_bytes(32));
+        db_connect()->table('posts')->where('id', $postId)->update(['preview_token' => $token, 'preview_token_expires' => date('Y-m-d H:i:s', strtotime('+7 days')), 'updated_at' => date('Y-m-d H:i:s')]);
+        $this->recordActivity('refreshed preview', 'posts', $postId);
+        return redirect()->to('/admin/posts/' . $postId . '/edit')->with('success', 'A fresh private preview link is ready.');
+    }
     public function settings()
     {
         if ($redirect = $this->requireAdministrator()) return $redirect;
@@ -265,7 +281,10 @@ class Admin extends BaseController
     public function saveSettings()
     {
         if ($redirect = $this->requireAdministrator()) return $redirect;
-        $db = db_connect(); foreach ($this->request->getPost(['site_name', 'site_tagline', 'contact_email', 'contact_phone', 'address', 'footer_text', 'logo']) as $key => $value) $db->table('settings')->replace(['setting_key' => $key, 'setting_value' => trim((string) $value), 'updated_at' => date('Y-m-d H:i:s')]);
+        $keys = ['site_name', 'site_tagline', 'contact_email', 'contact_phone', 'address', 'footer_text', 'logo', 'inquiry_recipient_email', 'inquiry_sender_email'];
+        $values = $this->request->getPost($keys);
+        foreach (['inquiry_recipient_email', 'inquiry_sender_email'] as $emailKey) if (! empty($values[$emailKey]) && ! filter_var($values[$emailKey], FILTER_VALIDATE_EMAIL)) return redirect()->back()->withInput()->with('error', 'Notification sender and recipient addresses must be valid email addresses.');
+        $db = db_connect(); foreach ($values as $key => $value) $db->table('settings')->replace(['setting_key' => $key, 'setting_value' => trim((string) $value), 'updated_at' => date('Y-m-d H:i:s')]);
         $this->recordActivity('updated site settings');
         return redirect()->to('/admin/settings')->with('success', 'Site settings saved.');
     }
@@ -275,9 +294,23 @@ class Admin extends BaseController
         $file = $this->request->getFile('file');
         if (! $file || ! $file->isValid() || $file->hasMoved() || ! in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'], true)) return redirect()->back()->with('error', 'Upload a valid JPG, PNG, or WebP image.');
         if ($file->getSize() > 10 * 1024 * 1024) return redirect()->back()->with('error', 'Images must be 10 MB or smaller.');
+        $dimensions = @getimagesize($file->getTempName());
+        if (! $dimensions || $dimensions[0] < 1 || $dimensions[1] < 1 || ((int) $dimensions[0] * (int) $dimensions[1]) > 40_000_000) return redirect()->back()->with('error', 'Images must be valid and no larger than 40 megapixels.');
+        $altText = trim((string) $this->request->getPost('alt_text'));
+        if (mb_strlen($altText) > 255) return redirect()->back()->withInput()->with('error', 'Alternative text cannot exceed 255 characters.');
         $name = $file->getRandomName(); $file->move(FCPATH . 'uploads', $name);
-        db_connect()->table('media')->insert(['filename' => $file->getClientName(), 'path' => '/uploads/' . $name, 'mime_type' => $file->getMimeType(), 'created_at' => date('Y-m-d H:i:s')]);
+        db_connect()->table('media')->insert(['filename' => $file->getClientName(), 'path' => '/uploads/' . $name, 'mime_type' => $file->getMimeType(), 'alt_text' => $altText ?: null, 'created_at' => date('Y-m-d H:i:s')]);
         return redirect()->to('/admin/media')->with('success', 'Image uploaded.');
+    }
+    public function saveMediaAlt(int $id)
+    {
+        $altText = trim((string) $this->request->getPost('alt_text'));
+        if (mb_strlen($altText) > 255) return redirect()->back()->withInput()->with('error', 'Alternative text cannot exceed 255 characters.');
+        $media = db_connect()->table('media')->where('id', $id)->get()->getRowArray();
+        if (! $media) throw PageNotFoundException::forPageNotFound();
+        db_connect()->table('media')->where('id', $id)->update(['alt_text' => $altText ?: null]);
+        $this->recordActivity('updated image alternative text', 'media', $id);
+        return redirect()->to('/admin/media')->with('success', 'Image alternative text saved.');
     }
     public function navigation()
     {
@@ -291,7 +324,7 @@ class Admin extends BaseController
         $data = $this->request->getPost(['label', 'url', 'sort_order', 'is_active']) ?? [];
         $data['label'] = trim((string) ($data['label'] ?? '')); $data['url'] = trim((string) ($data['url'] ?? ''));
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0); $data['is_active'] = (int) ($this->request->getPost('is_active') === '1');
-        if ($data['label'] === '' || ! preg_match('#^(https?://|/)#', $data['url'])) return redirect()->back()->withInput()->with('error', 'Provide a label and a valid absolute or site-relative URL.');
+        if ($data['label'] === '' || ! preg_match('#^(?:https?://|/(?!/))#', $data['url'])) return redirect()->back()->withInput()->with('error', 'Provide a label and a valid absolute or site-relative URL.');
         $data['updated_at'] = date('Y-m-d H:i:s'); $db = db_connect();
         if ($id) $db->table('navigation_items')->where('id', $id)->update($data); else $db->table('navigation_items')->insert($data + ['created_at' => date('Y-m-d H:i:s')]);
         $this->recordActivity($id ? 'updated navigation' : 'created navigation', 'navigation_items', $id);
@@ -304,22 +337,42 @@ class Admin extends BaseController
         $this->recordActivity('deleted navigation', 'navigation_items', $id);
         return redirect()->to('/admin/navigation')->with('success', 'Navigation item removed.');
     }
+    public function exportInquiries()
+    {
+        if ($redirect = $this->requireAdministrator()) return $redirect;
+        $rows = db_connect()->table('inquiries')->select('name,email,phone,subject,message,status,notification_status,notified_at,consented_at,created_at,updated_at,internal_notes')->orderBy('id', 'DESC')->get()->getResultArray();
+        $stream = fopen('php://temp', 'r+');
+        fputcsv($stream, ['Name', 'Email', 'Phone', 'Subject', 'Message', 'Lead status', 'Notification status', 'Notified at', 'Consented at', 'Received at', 'Updated at', 'Internal notes']);
+        foreach ($rows as $row) fputcsv($stream, array_map(fn ($value): string => $this->safeCsvValue($value), array_values($row)));
+        rewind($stream); $csv = stream_get_contents($stream); fclose($stream);
+        $this->recordActivity('exported inquiries');
+        return $this->response->setContentType('text/csv', 'UTF-8')->setHeader('Content-Disposition', 'attachment; filename="fynefield-inquiries-' . date('Y-m-d') . '.csv"')->setBody($csv);
+    }
     public function users()
     {
         if ($redirect = $this->requireAdministrator()) return $redirect;
-        $users = db_connect()->table('users')->select('id,name,email,role,created_at,updated_at')->orderBy('name')->get()->getResultArray();
+        $users = db_connect()->table('users')->select('id,name,email,role,is_active,created_at,updated_at')->orderBy('name')->get()->getResultArray();
         return view('admin/users', $this->data(compact('users')));
     }
     public function saveUser(?int $id = null)
     {
         if ($redirect = $this->requireAdministrator()) return $redirect;
-        $db = db_connect(); $data = $this->request->getPost(['name', 'email', 'role']) ?? [];
+        $db = db_connect(); $current = $id ? $db->table('users')->where('id', $id)->get()->getRowArray() : null;
+        if ($id && ! $current) throw PageNotFoundException::forPageNotFound();
+        $data = $this->request->getPost(['name', 'email', 'role']) ?? [];
         $data['name'] = trim((string) ($data['name'] ?? '')); $data['email'] = strtolower(trim((string) ($data['email'] ?? ''))); $data['role'] = in_array($data['role'] ?? '', ['admin', 'editor'], true) ? $data['role'] : 'editor';
+        $data['is_active'] = (int) ($this->request->getPost('is_active') === '1');
         if ($data['name'] === '' || ! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) return redirect()->back()->withInput()->with('error', 'Provide a name and valid email address.');
         $duplicate = $db->table('users')->where('email', $data['email']); if ($id) $duplicate->where('id !=', $id); if ($duplicate->countAllResults()) return redirect()->back()->withInput()->with('error', 'That email is already in use.');
+        if ($id === (int) session('admin_id') && ($data['role'] !== 'admin' || ! $data['is_active'])) return redirect()->back()->withInput()->with('error', 'You cannot remove your own administrator access or deactivate your current account.');
+        if ($current && $current['role'] === 'admin' && ($data['role'] !== 'admin' || ! $data['is_active'])) {
+            $otherAdministrators = $db->table('users')->where('role', 'admin')->where('is_active', 1)->where('id !=', $id)->countAllResults();
+            if ($otherAdministrators === 0) return redirect()->back()->withInput()->with('error', 'Keep at least one active administrator account.');
+        }
         $password = (string) $this->request->getPost('password'); if (! $id && strlen($password) < 12) return redirect()->back()->withInput()->with('error', 'New accounts require a password of at least 12 characters.');
-        if ($password !== '') { if (strlen($password) < 12) return redirect()->back()->withInput()->with('error', 'Passwords must have at least 12 characters.'); $data['password_hash'] = password_hash($password, PASSWORD_DEFAULT); }
+        if ($password !== '') { if (strlen($password) < 12) return redirect()->back()->withInput()->with('error', 'Passwords must have at least 12 characters.'); $data['password_hash'] = password_hash($password, PASSWORD_DEFAULT); $data['must_change_password'] = 1; }
         $data['updated_at'] = date('Y-m-d H:i:s'); if ($id) $db->table('users')->where('id', $id)->update($data); else $db->table('users')->insert($data + ['created_at' => date('Y-m-d H:i:s')]);
+        $this->recordActivity($id ? 'updated user' : 'created user', 'users', $id ?: (int) $db->insertID(), $data['role'] . ($data['is_active'] ? ':active' : ':inactive'));
         return redirect()->to('/admin/users')->with('success', 'User saved.');
     }
     public function profile(): string
@@ -332,9 +385,10 @@ class Admin extends BaseController
         $db = db_connect(); $user = $db->table('users')->where('id', session('admin_id'))->get()->getRowArray();
         $name = trim((string) $this->request->getPost('name')); $password = (string) $this->request->getPost('password');
         if ($name === '') return redirect()->back()->withInput()->with('error', 'Your name is required.');
+        if ($user['must_change_password'] && $password === '') return redirect()->back()->withInput()->with('error', 'You must set a new password before continuing.');
         $data = ['name' => $name, 'updated_at' => date('Y-m-d H:i:s')];
-        if ($password !== '') { if (strlen($password) < 12) return redirect()->back()->withInput()->with('error', 'Passwords must have at least 12 characters.'); $data['password_hash'] = password_hash($password, PASSWORD_DEFAULT); }
-        $db->table('users')->where('id', $user['id'])->update($data); session()->set('admin_name', $name);
+        if ($password !== '') { if (strlen($password) < 12) return redirect()->back()->withInput()->with('error', 'Passwords must have at least 12 characters.'); $data['password_hash'] = password_hash($password, PASSWORD_DEFAULT); $data['must_change_password'] = 0; }
+        $db->table('users')->where('id', $user['id'])->update($data); session()->set(['admin_name' => $name, 'must_change_password' => false]);
         return redirect()->to('/admin/profile')->with('success', 'Profile updated.');
     }
 }

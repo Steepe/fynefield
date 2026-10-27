@@ -1,3 +1,6 @@
+Admin Security
+ [x] Csv formula values are exported as text
+
 Example Database
  [x] Model find all
  [x] Soft delete leaves row

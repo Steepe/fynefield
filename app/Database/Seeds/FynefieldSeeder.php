@@ -11,7 +11,7 @@ class FynefieldSeeder extends Seeder
         $now = date('Y-m-d H:i:s');
         $this->db->table('users')->insert([
             'name' => 'Fynefield Administrator', 'email' => 'admin@fynefield.com',
-            'password_hash' => password_hash('ChangeMe!2026', PASSWORD_DEFAULT), 'role' => 'admin',
+            'password_hash' => password_hash('ChangeMe!2026', PASSWORD_DEFAULT), 'role' => 'admin', 'must_change_password' => 1,
             'created_at' => $now, 'updated_at' => $now,
         ]);
         $settings = [

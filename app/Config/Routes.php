@@ -4,6 +4,7 @@ use CodeIgniter\Router\RouteCollection;
 
 /** @var RouteCollection $routes */
 $routes->get('/', 'Site::home');
+$routes->get('healthz', 'Site::health');
 $routes->get('sitemap.xml', 'Site::sitemap');
 $routes->get('robots.txt', 'Site::robots');
 $routes->get('about-us', 'Site::page/about-us');
@@ -16,12 +17,18 @@ $routes->get('contact-us', 'Site::contact');
 $routes->post('contact-us', 'Site::storeInquiry');
 $routes->get('admin/login', 'Auth::login');
 $routes->post('admin/login', 'Auth::attempt');
+$routes->get('admin/forgot-password', 'Auth::forgotPassword');
+$routes->post('admin/forgot-password', 'Auth::sendPasswordReset');
+$routes->get('admin/reset-password', 'Auth::resetPassword');
+$routes->post('admin/reset-password', 'Auth::completePasswordReset');
 $routes->post('admin/logout', 'Auth::logout', ['filter' => 'adminauth']);
 $routes->get('admin', 'Admin::dashboard', ['filter' => 'adminauth']);
 $routes->get('admin/settings', 'Admin::settings', ['filter' => 'adminauth']);
 $routes->post('admin/settings', 'Admin::saveSettings', ['filter' => 'adminauth']);
 $routes->get('admin/media', 'Admin::media', ['filter' => 'adminauth']);
 $routes->post('admin/media', 'Admin::upload', ['filter' => 'adminauth']);
+$routes->post('admin/media/(:num)', 'Admin::saveMediaAlt/$1', ['filter' => 'adminauth']);
+$routes->get('admin/inquiries/export', 'Admin::exportInquiries', ['filter' => 'adminauth']);
 $routes->get('admin/navigation', 'Admin::navigation', ['filter' => 'adminauth']);
 $routes->post('admin/navigation', 'Admin::saveNavigation', ['filter' => 'adminauth']);
 $routes->post('admin/navigation/(:num)', 'Admin::saveNavigation/$1', ['filter' => 'adminauth']);
@@ -40,6 +47,7 @@ $routes->post('admin/pages/(:num)/sections/(:num)/delete', 'Admin::deleteSection
 $routes->post('admin/pages/(:num)/sections/(:num)/duplicate', 'Admin::duplicateSection/$1/$2', ['filter' => 'adminauth']);
 $routes->post('admin/pages/(:num)/sections/reorder', 'Admin::reorderSections/$1', ['filter' => 'adminauth']);
 $routes->post('admin/pages/(:num)/preview-link', 'Admin::refreshPreview/$1', ['filter' => 'adminauth']);
+$routes->post('admin/posts/(:num)/preview-link', 'Admin::refreshPostPreview/$1', ['filter' => 'adminauth']);
 $routes->get('admin/(:segment)/(:num)/revisions', 'Admin::revisions/$1/$2', ['filter' => 'adminauth']);
 $routes->post('admin/(:segment)/(:num)/revisions/(:num)/restore', 'Admin::restoreRevision/$1/$2/$3', ['filter' => 'adminauth']);
 $routes->get('admin/(:segment)', 'Admin::index/$1', ['filter' => 'adminauth']);
@@ -48,6 +56,7 @@ $routes->get('admin/(:segment)/(:num)/edit', 'Admin::edit/$1/$2', ['filter' => '
 $routes->post('admin/(:segment)', 'Admin::save/$1', ['filter' => 'adminauth']);
 $routes->post('admin/(:segment)/(:num)', 'Admin::save/$1/$2', ['filter' => 'adminauth']);
 $routes->post('admin/(:segment)/(:num)/delete', 'Admin::delete/$1/$2', ['filter' => 'adminauth']);
+$routes->get('preview/news/(:segment)', 'Site::previewPost/$1');
 $routes->get('preview/(:segment)', 'Site::previewPage/$1');
 $routes->get('(:segment)', 'Site::page/$1');
 $routes->get('(:any)', 'Site::legacyRedirect/$1');
