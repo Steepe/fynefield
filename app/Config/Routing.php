@@ -120,7 +120,9 @@ class Routing extends BaseRouting
      *
      * Default: false
      */
-    public bool $multipleSegmentsOneParam = false;
+    // The redirect manager intentionally accepts historical paths containing
+    // several URI segments as one source-path parameter.
+    public bool $multipleSegmentsOneParam = true;
 
     /**
      * For Auto Routing (Improved).

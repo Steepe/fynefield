@@ -1,0 +1,3 @@
+<?= $this->extend('layouts/admin') ?>
+<?= $this->section('content') ?>
+<section class="list-head"><div><p>My account</p><h1>Profile</h1></div></section><form class="editor-form profile-form" method="post" action="<?= site_url('admin/profile') ?>"><?= csrf_field() ?><label>Display name<input name="name" value="<?= esc($user['name']) ?>" required></label><label>Email<input value="<?= esc($user['email']) ?>" disabled></label><label class="wide">New password <small>Leave blank to keep the existing password. Minimum 12 characters.</small><input name="password" type="password" autocomplete="new-password"></label><div class="form-actions"><button class="primary">Save profile</button></div></form><?= $this->endSection() ?>

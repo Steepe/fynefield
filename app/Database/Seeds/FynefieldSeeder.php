@@ -42,5 +42,7 @@ class FynefieldSeeder extends Seeder
             ['title' => 'Fynefield Petroleum Recognized at OTL', 'slug' => 'fynefield-petroleum-recognized-at-otl', 'excerpt' => 'Fynefield Petroleum was recognized for sponsorship and customer engagement at the Oil Trading and Logistics Expo.', 'content' => '<p>Fynefield Petroleum continues to support conversations that move Nigeria\'s downstream energy sector forward.</p>', 'cover_image' => '/assets/media/frontpage-image1.jpg', 'status' => 'published', 'published_at' => '2024-01-12 09:00:00', 'created_at' => $now, 'updated_at' => $now],
             ['title' => 'A State-of-the-Art Petroleum Depot', 'slug' => 'state-of-the-art-petroleum-depot', 'excerpt' => 'How strategic storage infrastructure improves product availability and service reliability.', 'content' => '<p>Reliable energy supply begins with infrastructure designed for safety, efficiency and scale.</p>', 'cover_image' => '/assets/media/big-1.jpg', 'status' => 'published', 'published_at' => '2024-01-10 09:00:00', 'created_at' => $now, 'updated_at' => $now],
         ]);
+        $this->call('LegacyPageSeeder');
+        $this->call('CmsEnhancementSeeder');
     }
 }

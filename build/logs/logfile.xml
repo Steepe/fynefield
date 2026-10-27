@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/Users/oluwamayowasteepe/Sites/localhost/fynefield/phpunit.dist.xml" tests="5" assertions="7" errors="0" failures="0" skipped="0" time="0.043007">
+    <testsuite name="App" tests="5" assertions="7" errors="0" failures="0" skipped="0" time="0.043007">
+      <testsuite name="ExampleDatabaseTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.034037">
+        <testcase name="testModelFindAll" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" line="17" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="1" time="0.029248"/>
+        <testcase name="testSoftDeleteLeavesRow" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" line="28" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="2" time="0.004789"/>
+      </testsuite>
+      <testsuite name="ExampleSessionTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/session/ExampleSessionTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.000841">
+        <testcase name="testSessionSimple" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/session/ExampleSessionTest.php" line="10" class="ExampleSessionTest" classname="ExampleSessionTest" assertions="1" time="0.000841"/>
+      </testsuite>
+      <testsuite name="HealthTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/HealthTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.008129">
+        <testcase name="testIsDefinedAppPath" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/HealthTest.php" line="12" class="HealthTest" classname="HealthTest" assertions="1" time="0.000782"/>
+        <testcase name="testBaseUrlHasBeenSet" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/HealthTest.php" line="17" class="HealthTest" classname="HealthTest" assertions="2" time="0.007347"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

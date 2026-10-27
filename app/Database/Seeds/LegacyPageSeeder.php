@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Database\Seeds;
+
+use CodeIgniter\Database\Seeder;
+
+class LegacyPageSeeder extends Seeder
+{
+    public function run()
+    {
+        $now = date('Y-m-d H:i:s');
+        $pages = [
+            [2, 'published', 'Sample Page', 'sample-page', 'A page retained from the original content inventory.', '<p>This legacy page has been recreated in the new CMS. Replace this placeholder with the final approved content before featuring it in navigation.</p>', '/assets/media/frontpage-image2.jpg'],
+            [3, 'draft', 'Privacy Policy', 'privacy-policy', 'Privacy information awaiting legal review.', '<p>This page was retained as a draft from the previous site. Add your approved privacy policy here before publication.</p>', '/assets/media/recent-posts-background.jpg'],
+            [7, 'published', 'Newsletter', 'newsletter', 'Stay informed about Fynefield updates.', '<p>Subscribe to receive news, operational updates and company announcements from Fynefield Petroleum.</p><p>Newsletter delivery can be connected to your preferred email marketing provider from this page.</p>', '/assets/media/frontpage-image6.jpg'],
+            [1096, 'published', 'Home', 'home', 'The original home page record.', '<p>The homepage has been rebuilt at <a href="/">fynefield.test</a>. This CMS record preserves the former <strong>/home</strong> URL and can be edited independently.</p>', '/assets/media/slider3.jpg'],
+            [1266, 'published', 'News', 'news-2', 'News and updates from Fynefield Petroleum.', '<p>Read the latest operational and company updates from Fynefield Petroleum.</p><p><a href="/news">View all news</a></p>', '/assets/media/frontpage-image1.jpg'],
+            [1296, 'published', 'Toggles & Accordions', 'toggles-accordions', 'Legacy component page.', '<h2>Information</h2><p>This page was recreated from the legacy CMS inventory. Use the CMS editor to replace this content with approved frequently asked questions or accordion-style content.</p>', '/assets/media/frontpage-image6.jpg'],
+            [1313, 'published', 'Tabs', 'tabs', 'Legacy component page.', '<h2>Information</h2><p>This legacy page is retained as an editable CMS page. Replace it with organised content for customers or stakeholders.</p>', '/assets/media/frontpage-image3.jpg'],
+            [1334, 'published', 'Tables', 'tables', 'Legacy component page.', '<h2>Information</h2><p>This page has been recreated without the obsolete WordPress table shortcode. Add current specifications, service schedules, or other approved content here.</p>', '/assets/media/frontpage-image5.jpg'],
+            [1342, 'published', 'Progress Bars', 'progress-bars', 'Legacy component page.', '<h2>Our progress</h2><p>This page has been carried into the new CMS as an editable page. Add verified business metrics before publishing performance claims.</p>', '/assets/media/frontpage-image4.jpg'],
+            [1347, 'published', 'Notifications', 'notifications', 'Legacy component page.', '<h2>Notices</h2><p>Use this page for time-sensitive customer and operational notices when required.</p>', '/assets/media/frontpage-image2.jpg'],
+            [1353, 'published', 'Gallery', 'gallery', 'A visual record of Fynefield operations.', '<p>Selected recovered imagery is available below. Add or replace images in the CMS media library as new approved photography becomes available.</p>', '/assets/media/fynefield-commissioning.jpeg'],
+            [1369, 'published', 'Video', 'video', 'Fynefield video content.', '<p>This page has been retained for future company video content. Add approved hosted video links and supporting copy in the CMS.</p>', '/assets/media/frontpage-image1.jpg'],
+            [1375, 'published', 'FAQ', 'faq', 'Frequently asked questions.', '<h2>How can I make an enquiry?</h2><p>Use the contact form to send a supply, logistics, or service request to our team.</p><h2>Where does Fynefield operate?</h2><p>Our operations and retail network serve key locations across Nigeria.</p>', '/assets/media/frontpage-image6.jpg'],
+            [1379, 'published', 'Typography', 'typography', 'Legacy component page.', '<p>This page was preserved as an editable CMS record from the original website. Replace the legacy demonstration content with approved material or unpublish it from the CMS.</p>', '/assets/media/frontpage-image2.jpg'],
+            [1408, 'published', 'About Us', 'about-us', 'A Nigerian downstream energy company built for dependable supply and service.', '<p>Fynefield Petroleum Company Limited is a Nigerian vertically integrated Oil and Gas Downstream company, incorporated on 31 January 2013.</p><p>Our operations span petroleum product trading, bulk storage, haulage and distribution, and retail outlets. We bring disciplined operations and customer focus to every link in the downstream value chain.</p>', '/assets/media/aboutus.jpg'],
+            [1436, 'published', 'Services', 'services', 'Integrated downstream energy services.', '<p>Fynefield provides integrated downstream services across product storage, logistics, distribution and retail.</p><p><a href="/services">Explore our services</a></p>', '/assets/media/fynefield-commissioning.jpeg'],
+            [1450, 'published', 'Bulk Storage', 'bulk-storage', 'Strategic multi-product petroleum storage.', '<p>We have a 50-million-litre capacity multi-product depot located in the Calabar Free Trade Zone, Cross River State.</p><p>Our storage infrastructure supports dependable supply for customers and our growing network.</p><p><a href="/services/bulk-storage">View the service page</a></p>', '/assets/media/fynefield-commissioning.jpeg'],
+            [1461, 'published', 'Projects', 'projects', 'Projects and infrastructure supporting our service delivery.', '<p>Fynefield continues to invest in infrastructure and operations that strengthen dependable downstream energy delivery.</p><p>For a project or partnership discussion, please <a href="/contact-us">contact our team</a>.</p>', '/assets/media/big-1.jpg'],
+            [1482, 'published', 'Quote', 'quote', 'Request a commercial quote.', '<p>Tell us about your product, storage, haulage, distribution, or retail support requirements and our team will respond.</p><p><a href="/contact-us">Request a quote</a></p>', '/assets/media/frontpage-image4.jpg'],
+            [1508, 'published', 'CNC Industry', 'cnc-industry', 'Legacy service page.', '<p>This page was retained from the former website as an editable record. Update it with approved content if this service remains part of Fynefield\'s offering.</p>', '/assets/media/big-2.jpg'],
+            [1512, 'published', 'Logistics', 'logistics', 'Dependable product haulage and delivery.', '<p>Our logistics business provides essential product haulage services to our stations and customers in Calabar, Delta and Abuja. Our operation includes a dedicated fleet of more than 13 tank trucks.</p><p><a href="/services/logistics">View the service page</a></p>', '/assets/media/frontpage-image4.jpg'],
+            [1514, 'published', 'Energy Engineering', 'energy-engineering', 'Legacy service page.', '<p>This page was recreated from the original CMS inventory. Update it with current, approved energy engineering information before directing visitors here.</p>', '/assets/media/energy-small.jpg'],
+            [1522, 'published', 'Retail Outlets', 'retail-outlets', 'Convenient access to quality petroleum products.', '<p>Our retail network is expanding to more than 12 strategically positioned outlets across Cross River, Akwa Ibom, Delta, Benue, Borno and the FCT.</p><p><a href="/services/retail-outlets">View the service page</a></p>', '/assets/media/oil-small.jpg'],
+            [1524, 'published', 'Material Engineering', 'material-engineering', 'Legacy service page.', '<p>This page was retained from the original website and is ready to be updated with verified service information in the new CMS.</p>', '/assets/media/big-2.jpg'],
+            [1633, 'published', 'News & Events', 'news-events', 'Company news and events.', '<p>Follow company announcements, sector activity and Fynefield updates.</p><p><a href="/news">View news and insights</a></p>', '/assets/media/frontpage-image1.jpg'],
+            [1635, 'published', '3 Column News', '3-column-news', 'Company news in a compact view.', '<p>This legacy news landing page has been recreated. The central news archive is available at <a href="/news">/news</a>.</p>', '/assets/media/frontpage-image3.jpg'],
+            [2403, 'published', 'Management Team', 'management-team', 'The people guiding Fynefield.', '<p>Our leadership team brings practical energy-sector experience and a commitment to safe, reliable service.</p>', '/assets/media/fynefield-commissioning.jpeg'],
+            [2408, 'published', 'Locator', 'locator', 'Find Fynefield.', '<p>Fynefield\'s Abuja office is located in the Central Business District. Contact us for directions or assistance.</p><p><a href="/contact-us">Contact Fynefield</a></p>', '/assets/media/frontpage-image5.jpg'],
+            [2563, 'published', 'Contact Us', 'contact-us', 'Have a request or enquiry?', '<p>Contact the Fynefield team about your energy, supply, logistics, or service needs.</p><p><a href="/contact-us">Send an enquiry</a></p>', '/assets/media/frontpage-image4.jpg'],
+            [2565, 'draft', 'WP Popups Preview', 'wppopups-preview', 'Legacy WordPress system page.', '<p>This private WordPress system page has been retained as an unpublished CMS record for audit purposes only.</p>', '/assets/media/recent-posts-background.jpg'],
+        ];
+        foreach ($pages as [$legacyId, $status, $title, $slug, $excerpt, $content, $coverImage]) {
+            $data = ['legacy_source_id' => $legacyId, 'title' => $title, 'slug' => $slug, 'excerpt' => $excerpt, 'content' => $content, 'cover_image' => $coverImage, 'status' => $status, 'published_at' => $status === 'published' ? $now : null, 'updated_at' => $now];
+            $existing = $this->db->table('pages')->select('id')->where('slug', $slug)->get()->getRowArray();
+            if ($existing) $this->db->table('pages')->where('id', $existing['id'])->update($data);
+            else $this->db->table('pages')->insert($data + ['created_at' => $now]);
+        }
+    }
+}

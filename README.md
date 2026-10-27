@@ -16,10 +16,14 @@ Change that password before any deployment. Configure production database creden
 
 ## CMS capabilities
 
-- Public pages, service detail pages, news, leadership, locations and contact inquiry form
+- Every relevant recovered WordPress page record is recreated in the CMS (28 published pages, plus the privacy-policy and former private-system drafts); obsolete WooCommerce pages are intentionally excluded
 - Authenticated admin dashboard and CRUD for pages, news, services, team, locations, and customer inquiries
 - Site settings (branding, contacts, footer) and image library uploads
-- CSRF protection, session renewal on login, password-hashed administrator account, explicit routes, and a fresh MySQL schema
+- Rich-text authoring with a controlled media picker, server-side HTML sanitisation, and image type/size checks
+- Page builder with standard/landing templates and reusable Hero, Rich text, Image + text, CTA, Statistics, Gallery, and FAQ sections
+- Editorial workflow for drafts, review, scheduled publishing, immediate publishing, seven-day private previews, revision restore, and recent-activity history
+- Content search and status filters, SEO metadata and canonical controls, no-index support, navigation management, version history with safe restore, and administrator/editor account management
+- CSRF protection, session renewal on login, password-hashed administrator account, explicit routes, and a fresh MySQL schema. Public-page caching is intentionally disabled until cache invalidation is introduced for CMS edits.
 
 ## Recovery boundary
 
