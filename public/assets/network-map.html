@@ -16,14 +16,17 @@ svg{display:block;width:100%;height:100%}
 </style></head><body>
 <svg id="m"></svg>
 <script>
-const sites=[
- {k:'Cross River',city:'Calabar',c:[8.32,4.95],depot:true,dx:14,dy:16},
- {k:'FCT Abuja',city:'Abuja',c:[7.49,9.06],dx:14,dy:-8},
- {k:'Delta',city:'Warri',c:[5.75,5.52],dx:-14,dy:4,anchor:'end'},
- {k:'Akwa Ibom',city:'Uyo',c:[7.93,5.03],dx:-14,dy:18,anchor:'end'},
- {k:'Benue',city:'Makurdi',c:[8.54,7.73],dx:14,dy:4},
- {k:'Borno',city:'Maiduguri',c:[13.15,11.83],dx:-14,dy:-12,anchor:'end'}
+// Pins come from the Studio's Locations collection, embedded beside this frame by the page.
+const offsets={Calabar:[14,16],Abuja:[14,-8],Warri:[-14,4,'end'],Uyo:[-14,18,'end'],Makurdi:[14,4],Maiduguri:[-14,-12,'end']};
+const fallbackSites=[
+ {k:'Cross River',city:'Calabar',c:[8.32,4.95],type:'Depot',route:false},{k:'FCT Abuja',city:'Abuja',c:[7.49,9.06],route:true},{k:'Delta',city:'Warri',c:[5.75,5.52],route:true},
+ {k:'Akwa Ibom',city:'Uyo',c:[7.93,5.03],route:true},{k:'Benue',city:'Makurdi',c:[8.54,7.73],route:true},{k:'Borno',city:'Maiduguri',c:[13.15,11.83],route:true}
 ];
+let embedded=null;
+try{const host=window.frameElement&&window.frameElement.parentElement.querySelector('[data-map-sites]');if(host)embedded=JSON.parse(host.textContent);}catch(e){}
+const raw=Array.isArray(embedded)&&embedded.length?embedded:fallbackSites;
+const depotIndex=Math.max(0,raw.findIndex(s=>s.type==='Depot'));
+const sites=raw.map((s,i)=>{const o=offsets[s.city]||(s.c[0]<raw[depotIndex].c[0]-1?[-14,4,'end']:[14,4]);return Object.assign({},s,{depot:i===depotIndex,dx:o[0],dy:o[1],anchor:o[2]||'start'});});
 let active=null;
 const svg=d3.select('#m');
 fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then(r=>r.json()).then(topo=>{
@@ -39,9 +42,9 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then
   svg.append('path').datum(ng).attr('d',path).attr('fill','#0f2b42').attr('stroke','#e59b23').attr('stroke-opacity',.55).attr('stroke-width',1.2);
   const grat=d3.geoGraticule().step([2,2]);
   svg.append('path').datum(grat()).attr('d',path).attr('fill','none').attr('stroke','#ffffff').attr('stroke-opacity',.04).attr('clip-path',null);
-  const depot=sites[0];const P=s=>proj(s.c);
+  const depot=sites[depotIndex];const P=s=>proj(s.c);
   const routes=svg.append('g');
-  sites.slice(1).forEach(s=>{const a=P(depot),b=P(s);const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2-Math.hypot(b[0]-a[0],b[1]-a[1])*.22;
+  sites.filter(s=>!s.depot&&s.route!==false).forEach(s=>{const a=P(depot),b=P(s);const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2-Math.hypot(b[0]-a[0],b[1]-a[1])*.22;
    routes.append('path').attr('d',`M${a[0]},${a[1]} Q${mx},${my} ${b[0]},${b[1]}`).attr('fill','none').attr('stroke','url(#flame)').attr('stroke-width',1.6).attr('class','flow').attr('data-k',s.k).attr('opacity',.85);});
   const pins=svg.append('g').selectAll('g').data(sites).join('g').attr('transform',s=>`translate(${P(s)})`);
   pins.append('circle').attr('class','ring').attr('r',s=>s.depot?10:6).attr('fill','none').attr('stroke','#e59b23').attr('stroke-width',1.2);
