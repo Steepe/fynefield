@@ -104,6 +104,13 @@ class Studio extends BaseController
         return date('j M Y', strtotime($datetime));
     }
 
+    /** Prevent spreadsheet applications from evaluating exported CSV cells as formulas. */
+    private function safeCsvValue(mixed $value): string
+    {
+        $value = (string) $value;
+        return preg_match('/^\s*[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+    }
+
     private function json_list(mixed $value): array
     {
         $decoded = is_string($value) ? json_decode($value, true) : $value;
@@ -734,7 +741,7 @@ class Studio extends BaseController
         $stream = fopen('php://temp', 'r+');
         fputcsv($stream, ['Reference', 'Name', 'Company', 'Email', 'Phone', 'Topic', 'Subject', 'Message', 'Status', 'Notification', 'Received at', 'Updated at', 'Internal notes']);
         // Spreadsheet applications treat cells that start with a formula character as executable content.
-        foreach ($rows as $row) fputcsv($stream, array_map(static fn ($v): string => preg_match('/^\s*[=+\-@\t\r]/', (string) $v) ? "'" . $v : (string) $v, array_values($row)));
+        foreach ($rows as $row) fputcsv($stream, array_map(fn ($value): string => $this->safeCsvValue($value), array_values($row)));
         rewind($stream); $csv = stream_get_contents($stream); fclose($stream);
         $this->record('exported inquiries');
         return $this->response->setContentType('text/csv', 'UTF-8')->setHeader('Content-Disposition', 'attachment; filename="inquiries-' . date('Y-m-d') . '.csv"')->setBody($csv);

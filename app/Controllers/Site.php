@@ -70,8 +70,18 @@ class Site extends BaseController
         $headerSolid = $document['headerStyle'] === 'Solid' || ($sections[0]['type'] ?? '') !== 'hero';
         $footerCta = (bool) $document['footerCta'];
         $data = $this->sectionData($sections);
+        // The public reference pages use the same CMS records, but have a fixed
+        // editorial composition rather than an arbitrary block sequence.
+        if (in_array($slug, ['home', 'about-us', 'services', 'management-team', 'news', 'contact-us'], true)) {
+            $db = db_connect();
+            $data['services'] = $db->table('services')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray();
+            $data['team'] = $db->table('team_members')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray();
+            $data['locations'] = $db->table('locations')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray();
+            $data['posts'] = $this->visibleContent('posts')->orderBy('published_at', 'DESC')->get()->getResultArray();
+        }
         $pageTitle = $document['title'];
-        return view('site/page', $this->base(compact('page', 'sections', 'slug', 'title', 'metaDescription', 'shareImage', 'noindex', 'headerSolid', 'footerCta', 'data', 'isPreview', 'pageTitle')));
+        $view = in_array($slug, ['home', 'about-us', 'services', 'management-team', 'news', 'contact-us'], true) ? 'site/reference/' . $slug : 'site/page';
+        return view($view, $this->base(compact('page', 'sections', 'slug', 'title', 'metaDescription', 'shareImage', 'noindex', 'headerSolid', 'footerCta', 'data', 'isPreview', 'pageTitle')));
     }
 
     public function home()

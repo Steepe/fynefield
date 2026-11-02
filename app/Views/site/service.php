@@ -1,61 +1,7 @@
 <?= $this->extend('layouts/site') ?>
 <?= $this->section('content') ?>
-<?php
-use App\Libraries\Cms;
-use App\Libraries\Markdown;
-
-$facts = json_decode((string) $service['facts'], true) ?: [];
-$gallery = array_values(array_filter(json_decode((string) $service['gallery'], true) ?: []));
-$contactHref = Cms::href('page:contact-us');
-?>
-<section class="ff-page-hero">
-    <?php if ($service['image']): ?><img class="ff-page-hero-image is-faint" src="<?= esc($service['image']) ?>" alt=""><?php endif ?>
-    <div class="ff-page-hero-shade is-service"></div>
-    <div class="ff-page-hero-inner">
-        <div class="ff-breadcrumb"><a href="<?= site_url('/') ?>">Home</a><span>/</span><a href="<?= esc(Cms::href('page:services')) ?>">Services</a><span>/</span><span><?= esc($service['title']) ?></span></div>
-        <h1><?= esc($service['title']) ?></h1>
-        <p><?= esc($service['summary']) ?></p>
-    </div>
-</section>
-
-<nav class="ff-tabs" aria-label="Services">
-    <div class="ff-tabs-inner"><?php foreach ($services as $item): ?><a class="<?= $item['slug'] === $service['slug'] ? 'is-active' : '' ?>" href="<?= site_url('services/' . $item['slug']) ?>"<?= $item['slug'] === $service['slug'] ? ' aria-current="page"' : '' ?>><?= esc($item['title']) ?></a><?php endforeach ?></div>
-</nav>
-
-<section class="ff-overview">
-    <div>
-        <p class="ff-kicker">Overview</p>
-        <?php if ($service['lede']): ?><h2><?= esc($service['lede']) ?></h2><?php endif ?>
-        <div class="ff-overview-body"><?= Markdown::render($service['body']) ?></div>
-        <a class="ff-pill ff-pill-amber" href="<?= esc($contactHref) ?>"><?= esc($service['cta_label'] ?: 'Make an inquiry') ?></a>
-    </div>
-    <aside class="ff-glance" aria-label="At a glance">
-        <?php foreach ($facts as $fact): ?><div><span><?= esc($fact['l'] ?? '') ?></span><strong><?= esc($fact['v'] ?? '') ?></strong></div><?php endforeach ?>
-        <footer><span>Questions about this service?</span><a class="ff-accent-link" href="<?= esc($contactHref) ?>">Talk to our team →</a></footer>
-    </aside>
-</section>
-
-<?php if ($gallery): ?>
-<section class="ff-gallery">
-    <?php foreach ($gallery as $src): ?>
-    <button class="gallery-trigger" type="button" data-lightbox-src="<?= esc($src, 'attr') ?>" data-lightbox-alt="<?= esc($service['title'], 'attr') ?>"><img src="<?= esc($src) ?>" alt="<?= esc($service['title']) ?>"></button>
-    <?php endforeach ?>
-</section>
-<?php endif ?>
-
-<?php $others = array_filter($services, static fn (array $item): bool => $item['slug'] !== $service['slug']); ?>
-<?php if ($others): ?>
-<section class="ff-others">
-    <div class="ff-others-inner">
-        <h2>Other services</h2>
-        <div class="ff-others-grid">
-            <?php foreach ($others as $item): ?>
-            <a href="<?= site_url('services/' . $item['slug']) ?>"><span><strong><?= esc($item['title']) ?></strong><small><?= esc($item['summary']) ?></small></span><span class="ff-round-arrow" aria-hidden="true">→</span></a>
-            <?php endforeach ?>
-        </div>
-    </div>
-</section>
-<div class="ff-surface-spacer"></div>
-<?php endif ?>
-<?php if ($nav['showCta']): ?><?= view('site/sections/cta', ['s' => array_replace(Cms::sectionCommon(), Cms::sectionDefaults()['cta'], ['type' => 'cta']), 'cls' => '', 'idAttr' => '', 'contact' => $contact]) ?><?php endif ?>
+<?php use App\Libraries\Cms; use App\Libraries\Markdown; $facts = json_decode((string) $service['facts'], true) ?: []; ?>
+<section class="rf-page-hero has-image" style="background-image:url('<?= esc($service['image'] ?: '/assets/media/fynefield-commissioning.jpeg') ?>')"><div class="rf-shell"><span class="rf-breadcrumb"><a href="<?= site_url('/') ?>">Home</a> / <a href="<?= site_url('services') ?>">Services</a> / <?= esc($service['title']) ?></span><h1><?= esc($service['title']) ?></h1><p><?= esc($service['summary']) ?></p></div></section>
+<section class="rf-service-block"><div class="rf-shell"><img class="rf-service-image" src="<?= esc($service['image'] ?: '/assets/media/fynefield-commissioning.jpeg') ?>" alt="<?= esc($service['title']) ?>"><div class="rf-service-copy"><span class="rf-kicker">Overview</span><h2><?= esc($service['lede'] ?: $service['summary']) ?></h2><div><?= Markdown::render($service['body']) ?></div><div class="rf-facts"><?php foreach ($facts as $fact): ?><div><span><?= esc($fact['l'] ?? '') ?></span><strong><?= esc($fact['v'] ?? '') ?></strong></div><?php endforeach ?></div><a class="rf-button-dark" href="<?= esc(Cms::href('page:contact-us')) ?>"><?= esc($service['cta_label'] ?: 'Make an inquiry') ?> <span>→</span></a></div></div></section>
+<?php $others = array_filter($services, static fn ($item) => $item['slug'] !== $service['slug']); if ($others): ?><section class="rf-news-section"><div class="rf-shell"><div class="rf-section-head"><div><span class="rf-label">Services</span><h2>Other services</h2></div></div><div class="rf-news-cards"><?php foreach ($others as $item): ?><a class="rf-news-card" href="<?= site_url('services/' . $item['slug']) ?>"><img src="<?= esc($item['image'] ?: '/assets/media/fynefield-commissioning.jpeg') ?>" alt=""><div><h3><?= esc($item['title']) ?></h3><p><?= esc($item['summary']) ?></p><span class="rf-text-link">Learn more →</span></div></a><?php endforeach ?></div></div></section><?php endif ?>
 <?= $this->endSection() ?>

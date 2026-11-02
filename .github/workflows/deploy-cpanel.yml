@@ -1,0 +1,76 @@
+name: Deploy to cPanel via FTPS
+
+on:
+  workflow_run:
+    workflows: [Continuous Integration]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to deploy
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Automatic production deployment stays off until the repository variable
+    # DEPLOY_ENABLED is explicitly set to "true" after all secrets are present.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_ENABLED == 'true')
+    name: Deploy production release
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ secrets.PRODUCTION_URL }}
+    env:
+      PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+
+    steps:
+      - name: Check out tested revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.event.workflow_run.head_sha }}
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, mbstring
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Upload production release through explicit FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTPS_SERVER }}
+          username: ${{ secrets.FTPS_USERNAME }}
+          password: ${{ secrets.FTPS_PASSWORD }}
+          protocol: ftps
+          port: ${{ secrets.FTPS_PORT }}
+          server-dir: ${{ secrets.FTPS_SERVER_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/build/**
+            **/tests/**
+            **/writable/**
+            **/node_modules/**
+            **/.env
+            **/.phpunit.*
+            **/phpunit*.xml
+
+      - name: Verify production health endpoint
+        run: curl --fail --show-error --silent --retry 3 --retry-connrefused --max-time 20 "$PRODUCTION_URL/healthz"
