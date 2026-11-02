@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
+<<<<<<< Updated upstream
   <testsuite name="/Users/oluwamayowasteepe/Sites/localhost/fynefield/phpunit.dist.xml" tests="6" assertions="10" errors="0" failures="0" skipped="0" time="0.061375">
     <testsuite name="App" tests="6" assertions="10" errors="0" failures="0" skipped="0" time="0.061375">
       <testsuite name="ExampleDatabaseTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.047915">
@@ -15,6 +16,23 @@
       </testsuite>
       <testsuite name="StudioSecurityTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/StudioSecurityTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.002400">
         <testcase name="testCsvFormulaValuesAreExportedAsText" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/StudioSecurityTest.php" line="8" class="StudioSecurityTest" classname="StudioSecurityTest" assertions="3" time="0.002400"/>
+=======
+  <testsuite name="/Users/oluwamayowasteepe/Sites/localhost/fynefield/phpunit.dist.xml" tests="6" assertions="10" errors="0" failures="0" skipped="0" time="0.052052">
+    <testsuite name="App" tests="6" assertions="10" errors="0" failures="0" skipped="0" time="0.052052">
+      <testsuite name="ExampleDatabaseTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.039845">
+        <testcase name="testModelFindAll" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" line="17" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="1" time="0.032323"/>
+        <testcase name="testSoftDeleteLeavesRow" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/database/ExampleDatabaseTest.php" line="28" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="2" time="0.007522"/>
+      </testsuite>
+      <testsuite name="ExampleSessionTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/session/ExampleSessionTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.000875">
+        <testcase name="testSessionSimple" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/session/ExampleSessionTest.php" line="10" class="ExampleSessionTest" classname="ExampleSessionTest" assertions="1" time="0.000875"/>
+      </testsuite>
+      <testsuite name="AdminSecurityTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/AdminSecurityTest.php" tests="1" assertions="3" errors="0" failures="0" skipped="0" time="0.002061">
+        <testcase name="testCsvFormulaValuesAreExportedAsText" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/AdminSecurityTest.php" line="8" class="AdminSecurityTest" classname="AdminSecurityTest" assertions="3" time="0.002061"/>
+      </testsuite>
+      <testsuite name="HealthTest" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/HealthTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.009271">
+        <testcase name="testIsDefinedAppPath" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/HealthTest.php" line="12" class="HealthTest" classname="HealthTest" assertions="1" time="0.000831"/>
+        <testcase name="testBaseUrlHasBeenSet" file="/Users/oluwamayowasteepe/Sites/localhost/fynefield/tests/unit/HealthTest.php" line="17" class="HealthTest" classname="HealthTest" assertions="2" time="0.008439"/>
+>>>>>>> Stashed changes
       </testsuite>
     </testsuite>
   </testsuite>
