@@ -65,6 +65,7 @@ class Studio extends BaseController
 
     // ---------------------------------------------------------------- helpers
 
+
     private function json(array $data, int $status = 200): ResponseInterface
     {
         return $this->response->setStatusCode($status)->setJSON($data + ['csrf' => csrf_hash()]);
