@@ -33,7 +33,9 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: intl, mbstring, sqlite3
-          coverage: none
+          # phpunit.dist.xml produces coverage reports and treats a missing
+          # driver as a warning; preserve that quality check in CI.
+          coverage: xdebug
 
       - name: Validate Composer files
         run: composer validate --strict
