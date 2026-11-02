@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: ${{ secrets.PRODUCTION_URL }}
     env:
       PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
 
