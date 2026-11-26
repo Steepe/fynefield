@@ -20,7 +20,7 @@ $html = file_get_contents($reference);
 // paths can contain the same UUIDs, but those paths must remain server URLs.
 $html = str_replace(
     'd=d.split(e).join(l[e])',
-    'd=d.replaceAll(e,(v,i,s)=>s.slice(Math.max(0,i-17),i)==="/assets/redesign/"?v:l[e])',
+    'd=d.replaceAll(e,(v,i,s)=>(s.slice(Math.max(0,i-40),i).endsWith("/assets/redesign/")||s.slice(Math.max(0,i-40),i).endsWith("&#x2F;assets&#x2F;redesign&#x2F;"))?v:l[e])',
     $html
 );
 // The reference is an SPA. Seed its initial state from the server route so a
