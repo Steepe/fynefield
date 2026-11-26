@@ -16,11 +16,29 @@ if (! is_file($reference)) {
 
 $screen = $screen ?? 'Home';
 $html = file_get_contents($reference);
+// Decode bundled scripts on the server so browsers without the gzip streaming
+// API (including older Safari releases) receive usable JavaScript as well.
+$manifestTag = '<script type="__bundler/manifest">';
+$manifestStart = strpos($html, $manifestTag);
+$manifestEnd = $manifestStart === false ? false : strpos($html, '</script>', $manifestStart);
+if ($manifestStart === false || $manifestEnd === false) throw new RuntimeException('The redesign asset manifest is missing.');
+$manifestContent = $manifestStart + strlen($manifestTag);
+$manifest = json_decode(substr($html, $manifestContent, $manifestEnd - $manifestContent), true, 512, JSON_THROW_ON_ERROR);
+foreach ($manifest as &$resource) {
+    if (empty($resource['compressed'])) continue;
+    $bytes = base64_decode($resource['data'], true);
+    $decoded = $bytes === false ? false : gzdecode($bytes);
+    if ($decoded === false) throw new RuntimeException('A bundled redesign asset could not be decoded.');
+    $resource['data'] = base64_encode($decoded);
+    $resource['compressed'] = false;
+}
+unset($resource);
+$html = substr_replace($html, json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR), $manifestContent, $manifestEnd - $manifestContent);
 // The export replaces its resource UUIDs with browser blob URLs. CMS media
 // paths can contain the same UUIDs, but those paths must remain server URLs.
 $html = str_replace(
     'd=d.split(e).join(l[e])',
-    'd=d.replaceAll(e,(v,i,s)=>(s.slice(Math.max(0,i-40),i).endsWith("/assets/redesign/")||s.slice(Math.max(0,i-40),i).endsWith("&#x2F;assets&#x2F;redesign&#x2F;"))?v:l[e])',
+    'd=d.replace(new RegExp(e,"g"),(v,i,s)=>(s.slice(Math.max(0,i-40),i).endsWith("/assets/redesign/")||s.slice(Math.max(0,i-40),i).endsWith("&#x2F;assets&#x2F;redesign&#x2F;"))?v:l[e])',
     $html
 );
 // The reference is an SPA. Seed its initial state from the server route so a
@@ -44,7 +62,14 @@ $html = preg_replace_callback('~(<script type="__bundler/template">\s*)(.*?)(\s*
     if ($noindex || ! $seo['indexing']) $meta .= '<meta name="robots" content="noindex,follow">';
     if ($shareImage) $meta .= '<meta property="og:image" content="' . esc(base_url(ltrim($shareImage, '/')), 'attr') . '">';
     $meta .= '<meta property="og:title" content="' . esc($title, 'attr') . '"><meta property="og:description" content="' . esc($metaDescription, 'attr') . '">';
-    $template = preg_replace('~<head>~', '<head>' . $meta, $template, 1);
+    $mobileStyles = '<style>@media (max-width:480px){'
+        . '[data-screen-label="Hero"] [role="tablist"] button{font-size:12px!important;line-height:1.3!important;padding:16px 4px 20px 0!important;overflow-wrap:break-word}'
+        . '[data-screen-label="Hero"] [role="tablist"] .ff-bar{right:4px!important}'
+        . '[data-screen-label="Hero"] [aria-roledescription="slide"]{min-height:700px!important}'
+        . '[data-screen-label="Hero"] [aria-roledescription="slide"] .ff-wrap{padding-top:120px!important;padding-bottom:130px!important}'
+        . '[data-screen-label="Hero"] .ff-h1{font-size:clamp(36px,10vw,42px)}'
+        . '}</style>';
+    $template = preg_replace('~<head>~', '<head>' . $meta . $mobileStyles, $template, 1);
     $template = str_replace("e.preventDefault();\n        this.go(m[1], m[2]);", "e.preventDefault();\n        if (BUILDER_URLS[m[1]]) { window.location.assign(BUILDER_URLS[m[1]] + (m[2] || '')); return; }\n        this.go(m[1], m[2]);", $template);
     $template = str_replace('<a href="#" style="color:#a9a6c8;text-decoration:none" style-hover="color:#ffffff">Privacy policy</a>', '<a href="' . esc(site_url('privacy-policy'), 'attr') . '" style="color:#a9a6c8;text-decoration:none" style-hover="color:#ffffff">Privacy policy</a>', $template);
     $template = str_replace('<a href="#" style="color:#a9a6c8;text-decoration:none" style-hover="color:#ffffff">Sitemap</a>', '<a href="' . esc(site_url('sitemap.xml'), 'attr') . '" style="color:#a9a6c8;text-decoration:none" style-hover="color:#ffffff">Sitemap</a>', $template);
