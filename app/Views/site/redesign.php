@@ -16,6 +16,13 @@ if (! is_file($reference)) {
 
 $screen = $screen ?? 'Home';
 $html = file_get_contents($reference);
+// The export replaces its resource UUIDs with browser blob URLs. CMS media
+// paths can contain the same UUIDs, but those paths must remain server URLs.
+$html = str_replace(
+    'd=d.split(e).join(l[e])',
+    'd=d.replaceAll(e,(v,i,s)=>s.slice(Math.max(0,i-17),i)==="/assets/redesign/"?v:l[e])',
+    $html
+);
 // The reference is an SPA. Seed its initial state from the server route so a
 // direct link to one of the CMS-managed public URLs lands on the corresponding
 // authored screen, not on the home screen.
