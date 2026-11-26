@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - /bin/mkdir -p /home/creyjzkn/fynefield-app
+    - /usr/bin/rsync -a --exclude='/.git/' --exclude='/.env' --exclude='/writable/' --exclude='/public/uploads/' --exclude='/build/' --exclude='/tests/' /home/creyjzkn/repositories/fynefield/ /home/creyjzkn/fynefield-app/
