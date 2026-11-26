@@ -2,4 +2,4 @@
 deployment:
   tasks:
     - /bin/mkdir -p /home/creyjzkn/peanel.com/fynefield
-    - /usr/bin/rsync -a --exclude='/.git/' --exclude='/.env' --exclude='/writable/' --exclude='/public/uploads/' --exclude='/build/' --exclude='/tests/' /home/creyjzkn/repositories/fynefield/ /home/creyjzkn/peanel.com/fynefield/
+    - /usr/bin/rsync -a --no-perms --exclude='/.git/' --exclude='/.env' --exclude='/writable/' --exclude='/public/uploads/' --exclude='/build/' --exclude='/tests/' /home/creyjzkn/repositories/fynefield/ /home/creyjzkn/peanel.com/fynefield/
