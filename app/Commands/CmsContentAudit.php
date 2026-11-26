@@ -4,6 +4,7 @@ namespace App\Commands;
 
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
+use App\Libraries\Cms;
 
 class CmsContentAudit extends BaseCommand
 {
@@ -14,7 +15,7 @@ class CmsContentAudit extends BaseCommand
     private function checkMediaPath(string $path, string $context, array &$issues): void
     {
         if ($path === '') return;
-        if (! preg_match('#^/(?:assets/media|uploads)/#', $path)) {
+        if (! preg_match('#^/(?:assets/media|assets/redesign|uploads)/#', $path)) {
             $issues[] = "Non-Fynefield image source for {$context}: {$path}";
             return;
         }
@@ -34,23 +35,23 @@ class CmsContentAudit extends BaseCommand
         $issues = [];
         $warnings = [];
 
-        foreach (['pages' => 'cover_image', 'posts' => 'cover_image', 'services' => 'image'] as $table => $imageColumn) {
-            $records = $db->table($table)->select("id,title,slug,{$imageColumn},content")->where('status', 'published')->get()->getResultArray();
+        foreach (['posts' => ['cover_image', 'content'], 'services' => ['image', 'body']] as $table => [$imageColumn, $bodyColumn]) {
+            $records = $db->table($table)->select("id,title,slug,{$imageColumn},{$bodyColumn}")->where('status', 'published')->get()->getResultArray();
             foreach ($records as $record) {
                 $label = "{$table} #{$record['id']}";
                 if (trim((string) $record['title']) === '' || trim((string) $record['slug']) === '') $issues[] = "Published {$label} is missing a title or URL slug.";
                 $this->checkMediaPath((string) ($record[$imageColumn] ?? ''), $label, $issues);
-                $this->checkHtmlImages((string) ($record['content'] ?? ''), $label, $issues);
+                $this->checkHtmlImages((string) ($record[$bodyColumn] ?? ''), $label, $issues);
             }
         }
 
-        $sections = $db->table('page_sections')->select('page_sections.id,page_sections.section_type,page_sections.image,page_sections.items,page_sections.content,pages.title')->join('pages', 'pages.id = page_sections.page_id')->where('pages.status', 'published')->get()->getResultArray();
-        foreach ($sections as $section) {
-            $label = "page section #{$section['id']} on {$section['title']}";
-            $this->checkMediaPath((string) ($section['image'] ?? ''), $label, $issues);
-            $this->checkHtmlImages((string) ($section['content'] ?? ''), $label, $issues);
-            if ($section['section_type'] === 'gallery') {
-                foreach (preg_split('/\R/', (string) ($section['items'] ?? '')) ?: [] as $line) $this->checkMediaPath(trim(explode('|', $line, 2)[0]), $label, $issues);
+        foreach ($db->table('pages')->select('id,title,slug,sections')->where('status', 'published')->get()->getResultArray() as $page) {
+            if (trim((string) $page['title']) === '' || trim((string) $page['slug']) === '') $issues[] = "Published page #{$page['id']} is missing a title or URL slug.";
+            foreach (Cms::sections($page['sections']) as $section) {
+                $label = "page section {$section['id']} on {$page['title']}";
+                foreach (['image', 'image1', 'image2', 'image3'] as $key) $this->checkMediaPath((string) ($section[$key] ?? ''), $label, $issues);
+                $this->checkHtmlImages((string) ($section['body'] ?? ''), $label, $issues);
+                foreach (is_array($section['items'] ?? null) ? $section['items'] : [] as $item) if (is_array($item)) $this->checkMediaPath((string) ($item['image'] ?? ''), $label, $issues);
             }
         }
 
@@ -60,9 +61,9 @@ class CmsContentAudit extends BaseCommand
             if (trim((string) ($item['alt_text'] ?? '')) === '') $warnings[] = "Media #{$item['id']} has no alternative text; confirm it is decorative.";
         }
 
-        $navigation = $db->table('navigation_items')->select('id,label,url')->where('is_active', 1)->get()->getResultArray();
-        foreach ($navigation as $item) {
-            if (trim((string) $item['label']) === '' || ! preg_match('#^(?:https?://|/(?!/))#i', (string) $item['url'])) $issues[] = "Active navigation item #{$item['id']} is missing a label or has an invalid URL.";
+        foreach (Cms::get('nav')['header'] as $item) {
+            if (($item['show'] ?? '') === 'Hidden') continue;
+            if (trim(Cms::linkText($item)) === '' || Cms::href($item['link'] ?? '', $item['linkUrl'] ?? '') === '#') $issues[] = 'An active navigation item is missing a label or has an invalid URL.';
         }
 
         foreach ($warnings as $warning) CLI::write('Warning: ' . $warning, 'yellow');

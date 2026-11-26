@@ -6,6 +6,11 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('healthz', 'Site::health');
 $routes->get('sitemap.xml', 'Site::sitemap');
 $routes->get('robots.txt', 'Site::robots');
+// The reference design's links are intercepted during normal navigation, but
+// must also work when opened in a new tab or copied directly.
+foreach (['Home' => '/', 'About' => 'about-us', 'Services' => 'services', 'Leadership' => 'management-team', 'News' => 'news', 'Contact' => 'contact-us'] as $reference => $target) {
+    $routes->get($reference . '.dc.html', static fn () => redirect()->to(site_url($target), 301));
+}
 
 // Sign-in and account recovery.
 $routes->get('admin/login', 'Auth::login');

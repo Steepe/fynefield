@@ -178,6 +178,7 @@ class Cms
     {
         return [
             'general' => ['siteName' => 'Fynefield Petroleum', 'legalName' => 'Fynefield Petroleum Company Limited', 'tagline' => 'Energy solutions built on service excellence.', 'logo' => '/assets/media/fynefield-logo.png', 'favicon' => '', 'language' => 'English (Nigeria)', 'timezone' => 'West Africa Time (WAT)', 'dateFormat' => '12 Jan 2024'],
+            'redesign' => ['homeHeading' => 'Energy that keeps Nigeria moving.', 'homeIntro' => 'Trading, storing, transporting and retailing petroleum products across Nigeria.', 'aboutHeading' => 'Built for dependable supply.', 'servicesHeading' => 'Solutions that move energy forward.', 'leadershipHeading' => 'Our leadership.', 'newsHeading' => 'News & insights.', 'contactHeading' => 'Contact us.', 'heroImage' => '', 'textOverrides' => [], 'imageOverrides' => [], 'builderPages' => []],
             'contact' => ['phone' => '+234 807 119 1635', 'email' => 'info@fynefield.com', 'address' => 'Suite 3, 4th Floor, Sinoki House, P.M.B 603, Ahmadu Bello Way, CBD, Abuja.', 'mapsLink' => '', 'hours' => 'Mon–Fri, 8:00–17:00 WAT', 'whatsapp' => ''],
             'forms' => [
                 'topics' => [
@@ -200,6 +201,13 @@ class Cms
     public static function settingsTabs(): array
     {
         return [
+            ['k' => 'redesign', 'label' => 'Redesign content', 'desc' => 'Edit the supplied design. News and leadership profiles are managed in their collections. Text replacements match the original wording exactly.', 'fields' => [
+                ['k' => 'homeHeading', 'label' => 'Home hero heading'], ['k' => 'homeIntro', 'label' => 'Home hero introduction', 'type' => 'textarea', 'rows' => 3], ['k' => 'heroImage', 'label' => 'Home hero image', 'type' => 'image'],
+                ['k' => 'aboutHeading', 'label' => 'About heading'], ['k' => 'servicesHeading', 'label' => 'Businesses heading'], ['k' => 'leadershipHeading', 'label' => 'Leadership heading'], ['k' => 'newsHeading', 'label' => 'News heading'], ['k' => 'contactHeading', 'label' => 'Contact heading'],
+                ['k' => 'textOverrides', 'label' => 'Other design text', 'type' => 'list', 'itemLabel' => 'text replacement', 'sub' => [['k' => 'original', 'label' => 'Original text', 'type' => 'textarea'], ['k' => 'replacement', 'label' => 'Replacement text', 'type' => 'textarea']]],
+                ['k' => 'imageOverrides', 'label' => 'Other design images', 'type' => 'list', 'itemLabel' => 'image', 'sub' => [['k' => 'key', 'label' => 'Image key (e.g. team, fleet, depotTanks)'], ['k' => 'image', 'label' => 'Replacement image', 'type' => 'image']]],
+                ['k' => 'builderPages', 'label' => 'Pages using Studio blocks', 'type' => 'list', 'itemLabel' => 'page', 'hint' => 'Pages enter this list when their Studio blocks are published. Remove a page to return to the supplied design.', 'sub' => [['k' => 'slug', 'label' => 'Page slug (home, about-us, services, management-team, news or contact-us)']]],
+            ]],
             ['k' => 'general', 'label' => 'General', 'desc' => 'Site identity used across every page.', 'fields' => [['k' => 'siteName', 'label' => 'Site name'], ['k' => 'legalName', 'label' => 'Legal company name'], ['k' => 'tagline', 'label' => 'Tagline'], ['k' => 'logo', 'label' => 'Logo', 'type' => 'image'], ['k' => 'favicon', 'label' => 'Favicon', 'type' => 'image', 'hint' => '512 × 512 PNG'], ['k' => 'language', 'label' => 'Language', 'type' => 'select', 'options' => ['English (Nigeria)', 'English (UK)', 'English (US)']], ['k' => 'timezone', 'label' => 'Time zone', 'type' => 'select', 'options' => ['West Africa Time (WAT)', 'UTC']], ['k' => 'dateFormat', 'label' => 'Date format', 'type' => 'select', 'options' => ['12 Jan 2024', '12/01/2024', 'January 12, 2024']]]],
             ['k' => 'contact', 'label' => 'Contact details', 'desc' => 'Shown in the footer, contact page and calls to action.', 'fields' => [['k' => 'phone', 'label' => 'Phone'], ['k' => 'email', 'label' => 'Email'], ['k' => 'address', 'label' => 'Office address', 'type' => 'textarea', 'rows' => 3], ['k' => 'mapsLink', 'label' => 'Google Maps link', 'hint' => 'Used for "Get directions"'], ['k' => 'hours', 'label' => 'Opening hours'], ['k' => 'whatsapp', 'label' => 'WhatsApp number', 'hint' => 'Optional']]],
             ['k' => 'forms', 'label' => 'Forms & notifications', 'desc' => 'Inquiry topics, who receives them, and what customers see.', 'fields' => [['k' => 'topics', 'label' => 'Inquiry topics & routing', 'type' => 'list', 'itemLabel' => 'topic', 'sub' => [['k' => 'label', 'label' => 'Topic'], ['k' => 'route', 'label' => 'Send to email'], ['k' => 'hint', 'label' => 'Subject hint'], ['k' => 'message', 'label' => 'Message label']]], ['k' => 'refPrefix', 'label' => 'Reference prefix'], ['k' => 'responseTime', 'label' => 'Promised response time', 'type' => 'select', 'options' => ['Same day', 'One business day', 'Two business days']], ['k' => 'overdueHours', 'label' => 'Flag as overdue after', 'type' => 'select', 'options' => ['2 hours', '4 hours', '8 hours', '24 hours']], ['k' => 'autoReply', 'label' => 'Auto-reply email to customer', 'type' => 'toggle'], ['k' => 'autoReplyText', 'label' => 'Auto-reply message', 'type' => 'textarea', 'rows' => 4, 'hint' => '{ref} {topic} {name}'], ['k' => 'consent', 'label' => 'Consent text', 'type' => 'textarea', 'rows' => 3], ['k' => 'spam', 'label' => 'Spam protection', 'type' => 'toggle']]],
@@ -310,7 +318,7 @@ class Cms
     public static function safeMediaPath(mixed $path): string
     {
         $path = trim((string) $path);
-        return preg_match('#^/(?:uploads|assets/media)/[\w.\-/]+$#', $path) && ! str_contains($path, '..') ? $path : '';
+        return preg_match('#^/(?:uploads|assets/media|assets/redesign)/[\w.\-/]+$#', $path) && ! str_contains($path, '..') ? $path : '';
     }
 
     // ------------------------------------------------------------ formatting
@@ -521,6 +529,17 @@ class Cms
             'status' => 'published', 'published_at' => $publishedAt ?: ($page['status'] === 'published' && $page['published_at'] ? $page['published_at'] : $now),
             'approved_at' => $now, 'approved_by' => $editorId, 'updated_at' => $now,
         ]);
+        // The supplied design is a fixed composition. Once an editor publishes
+        // a changed block document, use the block renderer so every change,
+        // including order and visibility, is reflected on the public page.
+        if ($page['draft'] !== null && in_array($slug, ['home', 'about-us', 'services', 'management-team', 'news', 'contact-us'], true)) {
+            $redesign = self::get('redesign');
+            $pages = array_column($redesign['builderPages'] ?? [], 'slug');
+            if (! in_array($slug, $pages, true)) {
+                $redesign['builderPages'][] = ['slug' => $slug];
+                self::put('redesign', $redesign);
+            }
+        }
         self::syncNavForPage($slug, (bool) $doc['inNav'], $doc['title']);
     }
 

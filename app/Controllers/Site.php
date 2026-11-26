@@ -31,7 +31,7 @@ class Site extends BaseController
     {
         return $data + [
             'general' => Cms::get('general'), 'contact' => Cms::get('contact'), 'seo' => Cms::get('seo'), 'integrations' => Cms::get('integrations'),
-            'advanced' => Cms::get('advanced'), 'nav' => Cms::get('nav'), 'theme' => Cms::get('theme'), 'forms' => Cms::get('forms'),
+            'advanced' => Cms::get('advanced'), 'nav' => Cms::get('nav'), 'theme' => Cms::get('theme'), 'forms' => Cms::get('forms'), 'redesign' => Cms::get('redesign'),
         ];
     }
 
@@ -56,7 +56,7 @@ class Site extends BaseController
         return $data;
     }
 
-    private function renderPage(array $page, array $document, bool $isPreview = false)
+    private function renderPage(array $page, array $document, bool $isPreview = false, ?array $article = null)
     {
         $sections = array_values(array_filter($document['sections'], static fn (array $section): bool => ! $section['hidden']));
         $slug = trim($document['slug'], '/') ?: 'home';
@@ -67,6 +67,12 @@ class Site extends BaseController
         $metaDescription = $document['seoDesc'] ?: Cms::setting('seo', 'defaultDesc');
         $shareImage = $document['shareImage'] ?: Cms::setting('seo', 'shareImage');
         $noindex = $isPreview || (int) ($page['noindex'] ?? 0) === 1 || $document['visibility'] === 'Hidden from search';
+        if ($article !== null) {
+            $title = $article['seo_title'] ?: Cms::pageTitle($article['title']);
+            $metaDescription = $article['meta_description'] ?: $article['excerpt'];
+            $shareImage = $article['cover_image'];
+            $noindex = (int) $article['noindex'] === 1;
+        }
         $headerSolid = $document['headerStyle'] === 'Solid' || ($sections[0]['type'] ?? '') !== 'hero';
         $footerCta = (bool) $document['footerCta'];
         $data = $this->sectionData($sections);
@@ -78,10 +84,25 @@ class Site extends BaseController
             $data['team'] = $db->table('team_members')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray();
             $data['locations'] = $db->table('locations')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray();
             $data['posts'] = $this->visibleContent('posts')->orderBy('published_at', 'DESC')->get()->getResultArray();
+            $contactPage = $this->visibleContent('pages')->where('slug', 'contact-us')->get()->getRowArray();
+            $data['contactSections'] = $contactPage ? Cms::sections($contactPage['sections']) : [];
+            // The design is an SPA: links to unpublished or protected pages
+            // must still go through the server's visibility checks.
+            $publishedPages = $this->visibleContent('pages')->select('slug,visibility')->get()->getResultArray();
+            $data['pageVisibility'] = array_column($publishedPages, 'visibility', 'slug');
         }
         $pageTitle = $document['title'];
-        $view = in_array($slug, ['home', 'about-us', 'services', 'management-team', 'news', 'contact-us'], true) ? 'site/reference/' . $slug : 'site/page';
-        return view($view, $this->base(compact('page', 'sections', 'slug', 'title', 'metaDescription', 'shareImage', 'noindex', 'headerSolid', 'footerCta', 'data', 'isPreview', 'pageTitle')));
+        // The supplied redesign is a complete authored interactive document.
+        // Use it for the public experience; the Studio, CMS records, and all
+        // protected editorial routes remain available through their own routes.
+        $redesignPages = ['home', 'about-us', 'services', 'management-team', 'news', 'contact-us'];
+        $builderPages = array_column(Cms::get('redesign')['builderPages'] ?? [], 'slug');
+        if (! $isPreview && in_array($slug, $redesignPages, true) && ! in_array($slug, $builderPages, true)) {
+            $screen = ['home' => 'Home', 'about-us' => 'About', 'services' => 'Services', 'management-team' => 'Leadership', 'news' => 'News', 'contact-us' => 'Contact'][$slug];
+            return view('site/redesign', $this->base(compact('screen', 'data', 'sections', 'document', 'title', 'metaDescription', 'shareImage', 'noindex', 'article')));
+        }
+        $builderPage = true;
+        return view('site/page', $this->base(compact('page', 'sections', 'slug', 'title', 'metaDescription', 'shareImage', 'noindex', 'headerSolid', 'footerCta', 'data', 'isPreview', 'pageTitle', 'builderPage')));
     }
 
     public function home()
@@ -177,11 +198,13 @@ class Site extends BaseController
         return $this->response->setContentType('text/plain')->setBody("User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /preview/\n" . $sitemap);
     }
 
-    public function service(string $slug): string
+    public function service(string $slug)
     {
         $db = db_connect();
         $service = $db->table('services')->where(['slug' => $slug, 'status' => 'published'])->get()->getRowArray();
         if (! $service) throw PageNotFoundException::forPageNotFound();
+        $builderPages = array_column(Cms::get('redesign')['builderPages'] ?? [], 'slug');
+        if (! in_array('services', $builderPages, true) && in_array($slug, ['bulk-storage', 'logistics', 'retail-outlets'], true)) return redirect()->to(site_url('services') . '#' . ($slug === 'retail-outlets' ? 'retail' : $slug), 302);
         $services = $db->table('services')->where('status', 'published')->orderBy('sort_order')->get()->getResultArray();
         $title = Cms::pageTitle($service['title']);
         $metaDescription = $service['summary'];
@@ -193,6 +216,12 @@ class Site extends BaseController
     {
         $post = $this->visibleContent('posts')->where('slug', $slug)->get()->getRowArray();
         if (! $post) throw PageNotFoundException::forPageNotFound();
+        $newsPage = $this->visibleContent('pages')->where('slug', 'news')->get()->getRowArray();
+        $builderPages = array_column(Cms::get('redesign')['builderPages'] ?? [], 'slug');
+        if ($newsPage && $newsPage['visibility'] === 'Public' && ! in_array('news', $builderPages, true)) {
+            unset($newsPage['draft']);
+            return $this->renderPage($newsPage, Cms::pageDocument($newsPage), false, $post);
+        }
         return $this->articleView($post, false);
     }
 

@@ -235,6 +235,7 @@
                     </div>`}
                 </div>
             </header>
+            ${['/', '/about-us', '/services', '/management-team', '/news', '/contact-us'].includes(page.slug) && html`<div style=${css('padding:10px 18px;background:#fff7dc;color:#493d15;font-size:13px;line-height:1.45')}>Publishing this page uses the Studio blocks shown below in place of the supplied fixed layout. To restore that layout later, remove this page from Settings → Redesign content → Pages using Studio blocks.</div>`}
             <div style=${css(`flex:1;display:grid;grid-template-columns:${editorCols};min-height:0;position:relative`)}>
                 <div style=${css(outlineStyle)}>
                     <div style=${css('font-size:12px;font-weight:600;color:#5b6977;margin:2px 4px 10px')}>Sections</div>

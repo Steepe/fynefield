@@ -57,7 +57,6 @@ class Filters extends BaseFilters
         ],
         'after' => [
             'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
         ],
     ];
 
@@ -78,6 +77,10 @@ class Filters extends BaseFilters
         'after' => [
             // 'honeypot',
             'secureheaders',
+            // The self-contained redesign replaces its document element during
+            // boot. Injecting the development toolbar into it produces a false
+            // client-side error, so keep the toolbar off public design routes.
+            'toolbar' => ['except' => ['/', 'about-us', 'services', 'services/*', 'management-team', 'news', 'news/*', 'contact-us']],
         ],
     ];
 
